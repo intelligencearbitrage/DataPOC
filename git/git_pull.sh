@@ -1,2 +1,0 @@
-cd ~/DataPOC
-git pull
