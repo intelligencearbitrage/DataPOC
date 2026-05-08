@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gas Station AI GS AI Platform Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+header { background: #1B5E20; color: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+header h1 { font-size: 1.4rem; font-weight: 600; }
+.station-select { display: flex; align-items: center; gap: 10px; }
+.station-select label { font-size: 0.85rem; opacity: 0.9; }
+.station-select select { padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.85rem; min-width: 200px; }
+.tabs { background: #2E7D32; display: flex; overflow-x: auto; }
+.tabs button { background: none; border: none; color: rgba(255,255,255,0.7); padding: 12px 20px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; border-bottom: 3px solid transparent; }
+.tabs button:hover { color: white; background: rgba(255,255,255,0.1); }
+.tabs button.active { color: white; border-bottom-color: #A5D6A7; background: rgba(255,255,255,0.1); }
+.content { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+.page { display: none; }
+.page.active { display: block; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.kpi-card .label { font-size: 0.75rem; text-transform: uppercase; color: #666; letter-spacing: 0.5px; margin-bottom: 4px; }
+.kpi-card .value { font-size: 1.6rem; font-weight: 700; color: #1B5E20; }
+.kpi-card .sub { font-size: 0.75rem; color: #888; margin-top: 4px; }
+.chart-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+.chart-container h3 { font-size: 0.95rem; margin-bottom: 12px; color: #333; }
+.chart-container canvas { max-height: 300px; }
+.table-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; overflow-x: auto; }
+.table-container h3 { font-size: 0.95rem; margin-bottom: 12px; color: #333; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+th { background: #f0f0f0; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; white-space: nowrap; }
+td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+.badge-critical { background: #FFCDD2; color: #B71C1C; }
+.badge-watch { background: #FFE0B2; color: #E65100; }
+.badge-warning { background: #FFF9C4; color: #F57F17; }
+.badge-ok { background: #C8E6C9; color: #1B5E20; }
+.badge-high { background: #FFCDD2; color: #B71C1C; }
+.badge-markdown { background: #E3F2FD; color: #0D47A1; }
+.badge-return { background: #FFF3E0; color: #E65100; }
+.badge-discontinue { background: #FCE4EC; color: #880E4F; }
+.gap-positive { color: #B71C1C; font-weight: 600; }
+.gap-negative { color: #1B5E20; font-weight: 600; }
+.gap-neutral { color: #666; }
+.heatmap-table td { text-align: center; font-weight: 600; min-width: 40px; }
+.heat-0 { background: #f5f5f5; color: #999; }
+.heat-1 { background: #C8E6C9; color: #1B5E20; }
+.heat-2 { background: #A5D6A7; color: #1B5E20; }
+.heat-3 { background: #FFF9C4; color: #F57F17; }
+.heat-4 { background: #FFE0B2; color: #E65100; }
+.heat-5 { background: #FFCDD2; color: #B71C1C; }
+.heat-6 { background: #EF9A9A; color: #B71C1C; }
+.note-box { background: #FFF8E1; border-left: 4px solid #FFB300; padding: 12px 16px; border-radius: 4px; margin-bottom: 24px; font-size: 0.85rem; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Gas Station AI GS AI Platform Analytics</h1>
+  <div class="station-select">
+    <label>Station:</label>
+    <select id="stationSelector">
+      <option value="ALL">All Stations</option>
+    </select>
+  </div>
+</header>
+
+<nav class="tabs" id="tabNav">
+  <button class="active" data-page="home">Home</button>
+  <button data-page="pl">Daily P&L</button>
+  <button data-page="pricing">Competitor Pricing</button>
+  <button data-page="cstore">C-Store Inventory</button>
+  <button data-page="driveoff">Drive-Off Tracker</button>
+  <button data-page="ust">UST Reconciliation</button>
+</nav>
+
+<div class="content">
+  <!-- HOME PAGE -->
+  <div class="page active" id="page-home">
+    <div class="kpi-grid" id="home-kpis"></div>
+    <div class="chart-container">
+      <h3>Daily Net Profit by Station (Last 10 Days)</h3>
+      <canvas id="homePLChart"></canvas>
+    </div>
+    <div class="table-container">
+      <h3>Station Performance (30-Day Summary)</h3>
+      <table id="homeTable"></table>
+    </div>
+  </div>
+
+  <!-- DAILY P&L PAGE -->
+  <div class="page" id="page-pl">
+    <div class="kpi-grid" id="pl-kpis"></div>
+    <div class="chart-container">
+      <h3>Daily Profit Trend</h3>
+      <canvas id="plBarChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Profit Breakdown (30-Day)</h3>
+      <canvas id="plBreakdownChart"></canvas>
+    </div>
+  </div>
+
+  <!-- COMPETITOR PRICING PAGE -->
+  <div class="page" id="page-pricing">
+    <div class="kpi-grid" id="pricing-kpis"></div>
+    <div class="chart-container">
+      <h3>Price Comparison by Grade</h3>
+      <canvas id="pricingChart"></canvas>
+    </div>
+    <div class="table-container">
+      <h3>Gap Analysis Detail</h3>
+      <table id="pricingTable"></table>
+    </div>
+  </div>
+
+  <!-- C-STORE INVENTORY PAGE -->
+  <div class="page" id="page-cstore">
+    <div class="kpi-grid" id="cstore-kpis"></div>
+    <div class="table-container">
+      <h3>Dead Stock Items</h3>
+      <table id="deadStockTable"></table>
+    </div>
+    <div class="table-container">
+      <h3>Reorder Recommendations (Critical/High Urgency)</h3>
+      <table id="reorderTable"></table>
+    </div>
+  </div>
+
+  <!-- DRIVE-OFF TRACKER PAGE -->
+  <div class="page" id="page-driveoff">
+    <div class="kpi-grid" id="driveoff-kpis"></div>
+    <div class="note-box">Pump 3 accounts for 37% of all incidents. Consider enhanced prepay enforcement or camera coverage at this location.</div>
+    <div class="chart-container">
+      <h3>Incidents by Pump</h3>
+      <canvas id="driveoffPumpChart"></canvas>
+    </div>
+    <div class="table-container">
+      <h3>Hourly Pattern Heatmap (Incidents by Hour &amp; Day)</h3>
+      <table id="driveoffHeatmap" class="heatmap-table"></table>
+    </div>
+  </div>
+
+  <!-- UST RECONCILIATION PAGE -->
+  <div class="page" id="page-ust">
+    <div class="kpi-grid" id="ust-kpis"></div>
+    <div class="chart-container">
+      <h3>Leak Detection &mdash; Elm St. BP TANK_3 (Diesel): Cumulative Variance vs EPA Threshold</h3>
+      <canvas id="ustLeakChart"></canvas>
+    </div>
+    <div class="table-container">
+      <h3>Current Tank Status</h3>
+      <table id="ustStatusTable"></table>
+    </div>
+    <div class="table-container">
+      <h3>Reconciliation Log</h3>
+      <table id="ustReconTable"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+window.DATA = {
+  stations: [
+    {id:"STN-001",name:"Main St. Citgo",city:"Houston",state:"TX"},
+    {id:"STN-002",name:"Oak Ave Shell",city:"Dallas",state:"TX"},
+    {id:"STN-003",name:"Elm St. BP",city:"Austin",state:"TX"},
+    {id:"STN-004",name:"Pine Rd. Chevron",city:"San Antonio",state:"TX"},
+    {id:"STN-005",name:"Maple Ln. Valero",city:"Oklahoma City",state:"OK"}
+  ],
+  pl_trend: [
+    {date:"Apr 16","STN-001":851.61,"STN-002":474.50,"STN-003":695.51,"STN-004":823.03,"STN-005":530.15},
+    {date:"Apr 17","STN-001":786.00,"STN-002":625.69,"STN-003":613.86,"STN-004":863.98,"STN-005":601.29},
+    {date:"Apr 18","STN-001":624.75,"STN-002":660.41,"STN-003":519.09,"STN-004":699.26,"STN-005":759.13},
+    {date:"Apr 19","STN-001":738.43,"STN-002":674.90,"STN-003":547.03,"STN-004":785.75,"STN-005":572.81},
+    {date:"Apr 20","STN-001":731.07,"STN-002":720.03,"STN-003":746.69,"STN-004":646.34,"STN-005":505.70},
+    {date:"Apr 21","STN-001":537.39,"STN-002":626.81,"STN-003":610.34,"STN-004":596.81,"STN-005":620.75},
+    {date:"Apr 22","STN-001":724.43,"STN-002":604.30,"STN-003":587.44,"STN-004":596.54,"STN-005":804.30},
+    {date:"Apr 23","STN-001":816.59,"STN-002":593.18,"STN-003":648.25,"STN-004":667.46,"STN-005":752.36},
+    {date:"Apr 24","STN-001":603.09,"STN-002":761.33,"STN-003":717.83,"STN-004":543.81,"STN-005":856.92},
+    {date:"Apr 25","STN-001":744.86,"STN-002":573.94,"STN-003":814.43,"STN-004":758.32,"STN-005":739.51}
+  ],
+  pl_kpis: {
+    "STN-001":{net_profit:20784,gallons:48012,margin_per_gal:0.434,cstore_profit:10612,labor_cost:10728},
+    "STN-002":{net_profit:19969,gallons:48639,margin_per_gal:0.438,cstore_profit:10476,labor_cost:11616},
+    "STN-003":{net_profit:20191,gallons:48208,margin_per_gal:0.440,cstore_profit:10340,labor_cost:11092},
+    "STN-004":{net_profit:20306,gallons:48875,margin_per_gal:0.431,cstore_profit:10205,labor_cost:10804},
+    "STN-005":{net_profit:20321,gallons:47956,margin_per_gal:0.435,cstore_profit:10756,labor_cost:10932}
+  },
+  price_gaps: {
+    "STN-001":[{grade:"REGULAR",own:3.003,avg_comp:3.013,gap:-0.010},{grade:"MID",own:3.333,avg_comp:3.352,gap:-0.019},{grade:"PREMIUM",own:3.623,avg_comp:3.621,gap:0.003},{grade:"DIESEL",own:3.233,avg_comp:3.228,gap:0.005}],
+    "STN-002":[{grade:"REGULAR",own:3.043,avg_comp:3.003,gap:0.040},{grade:"MID",own:3.293,avg_comp:3.342,gap:-0.049},{grade:"PREMIUM",own:3.643,avg_comp:3.618,gap:0.025},{grade:"DIESEL",own:3.243,avg_comp:3.231,gap:0.013}],
+    "STN-003":[{grade:"REGULAR",own:3.013,avg_comp:3.014,gap:-0.001},{grade:"MID",own:3.353,avg_comp:3.326,gap:0.028},{grade:"PREMIUM",own:3.633,avg_comp:3.629,gap:0.004},{grade:"DIESEL",own:3.213,avg_comp:3.212,gap:0.001}],
+    "STN-004":[{grade:"REGULAR",own:3.033,avg_comp:3.016,gap:0.018},{grade:"MID",own:3.353,avg_comp:3.306,gap:0.048},{grade:"PREMIUM",own:3.593,avg_comp:3.608,gap:-0.015},{grade:"DIESEL",own:3.213,avg_comp:3.206,gap:0.008}],
+    "STN-005":[{grade:"REGULAR",own:3.003,avg_comp:3.019,gap:-0.016},{grade:"MID",own:3.333,avg_comp:3.323,gap:0.010},{grade:"PREMIUM",own:3.623,avg_comp:3.619,gap:0.004},{grade:"DIESEL",own:3.253,avg_comp:3.237,gap:0.016}]
+  },
+  price_alert_summary: {PRICED_HIGH:451,avg_gap:0.063},
+  dead_stock_summary: [{rec:"MARKDOWN",items:16,value:350.70},{rec:"RETURN",items:4,value:79.25},{rec:"DISCONTINUE",items:3,value:63.00}],
+  dead_stock_detail: [
+    {station:"Maple Ln. Valero",product:"Firewood Bundle",category:"OTHER",days_idle:108,sold_90d:0,on_hand:15,value:45.00,rec:"DISCONTINUE",markdown:50},
+    {station:"Oak Ave Shell",product:"Propane Tank Exchange",category:"OTHER",days_idle:38,sold_90d:11,on_hand:3,value:45.00,rec:"MARKDOWN",markdown:20},
+    {station:"Maple Ln. Valero",product:"Ice 10lb Bag",category:"OTHER",days_idle:38,sold_90d:6,on_hand:38,value:38.00,rec:"MARKDOWN",markdown:20},
+    {station:"Maple Ln. Valero",product:"Lighter BIC",category:"OTHER",days_idle:73,sold_90d:8,on_hand:49,value:36.75,rec:"RETURN",markdown:30},
+    {station:"Elm St. BP",product:"Firewood Bundle",category:"OTHER",days_idle:57,sold_90d:7,on_hand:11,value:33.00,rec:"MARKDOWN",markdown:20},
+    {station:"Pine Rd. Chevron",product:"Phone Charger USB-C",category:"OTHER",days_idle:33,sold_90d:5,on_hand:11,value:33.00,rec:"MARKDOWN",markdown:20},
+    {station:"Elm St. BP",product:"Sunscreen SPF50 3oz",category:"OTHER",days_idle:44,sold_90d:6,on_hand:12,value:30.00,rec:"MARKDOWN",markdown:20},
+    {station:"Pine Rd. Chevron",product:"Propane Tank Exchange",category:"OTHER",days_idle:41,sold_90d:3,on_hand:2,value:30.00,rec:"MARKDOWN",markdown:20},
+    {station:"Pine Rd. Chevron",product:"Ice 10lb Bag",category:"OTHER",days_idle:40,sold_90d:11,on_hand:29,value:29.00,rec:"MARKDOWN",markdown:20},
+    {station:"Elm St. BP",product:"Windshield Washer Fluid 1gal",category:"OTHER",days_idle:45,sold_90d:16,on_hand:12,value:24.00,rec:"MARKDOWN",markdown:20}
+  ],
+  reorders: [
+    {station:"Pine Rd. Chevron",product:"KIND Dark Chocolate Nuts",category:"SNACKS",distributor:"Core-Mark International",on_hand:0,daily_sales:2.29,days_supply:0,reorder_qty:12,urgency:"CRITICAL"},
+    {station:"Maple Ln. Valero",product:"Body Armor Strawberry Banana",category:"BEVERAGE",distributor:"McLane Company",on_hand:0,daily_sales:2.86,days_supply:0,reorder_qty:12,urgency:"CRITICAL"},
+    {station:"Maple Ln. Valero",product:"Mountain Dew 20oz",category:"BEVERAGE",distributor:"McLane Company",on_hand:0,daily_sales:2.14,days_supply:0,reorder_qty:12,urgency:"CRITICAL"},
+    {station:"Oak Ave Shell",product:"Jack Links Beef Jerky 2.85oz",category:"SNACKS",distributor:"Core-Mark International",on_hand:0,daily_sales:2.71,days_supply:0,reorder_qty:12,urgency:"CRITICAL"},
+    {station:"Main St. Citgo",product:"Corona Extra 6pk 12oz",category:"BEER",distributor:"AB InBev Distributor",on_hand:0,daily_sales:1.29,days_supply:0,reorder_qty:6,urgency:"CRITICAL"},
+    {station:"Maple Ln. Valero",product:"Camel Blue Pack",category:"TOBACCO",distributor:"Altria Distribution",on_hand:0,daily_sales:1.57,days_supply:0,reorder_qty:8,urgency:"CRITICAL"},
+    {station:"Elm St. BP",product:"Modelo Especial 24oz Can",category:"BEER",distributor:"AB InBev Distributor",on_hand:0,daily_sales:2.00,days_supply:0,reorder_qty:24,urgency:"CRITICAL"},
+    {station:"Elm St. BP",product:"Dr Pepper 20oz",category:"BEVERAGE",distributor:"McLane Company",on_hand:0,daily_sales:2.43,days_supply:0,reorder_qty:12,urgency:"CRITICAL"},
+    {station:"Elm St. BP",product:"Monster Original 16oz",category:"BEVERAGE",distributor:"McLane Company",on_hand:0,daily_sales:2.71,days_supply:0,reorder_qty:24,urgency:"CRITICAL"},
+    {station:"Main St. Citgo",product:"Breakfast Burrito",category:"FOOD_SERVICE",distributor:"Core-Mark International",on_hand:0,daily_sales:3.14,days_supply:0,reorder_qty:12,urgency:"CRITICAL"}
+  ],
+  driveoff_pump_risk: [
+    {pump:3,incidents:53,revenue_lost:2171.15,gallons:641.8},
+    {pump:7,incidents:21,revenue_lost:909.46,gallons:237.3},
+    {pump:8,incidents:16,revenue_lost:629.73,gallons:192.9},
+    {pump:2,incidents:14,revenue_lost:605.25,gallons:173.7},
+    {pump:6,incidents:13,revenue_lost:484.64,gallons:160.7},
+    {pump:4,incidents:11,revenue_lost:511.93,gallons:122.6},
+    {pump:1,incidents:9,revenue_lost:342.33,gallons:115.2},
+    {pump:5,incidents:7,revenue_lost:328.53,gallons:80.9}
+  ],
+  driveoff_hourly: [
+    {hour:21,day:"Fri",incidents:6},{hour:17,day:"Sat",incidents:5},
+    {hour:19,day:"Tue",incidents:4},{hour:16,day:"Wed",incidents:4},
+    {hour:13,day:"Sat",incidents:4},{hour:14,day:"Sat",incidents:4},
+    {hour:19,day:"Fri",incidents:4},{hour:21,day:"Mon",incidents:4},
+    {hour:17,day:"Fri",incidents:3},{hour:20,day:"Tue",incidents:3},
+    {hour:21,day:"Sun",incidents:3},{hour:11,day:"Thu",incidents:3},
+    {hour:14,day:"Sun",incidents:3},{hour:16,day:"Thu",incidents:3},
+    {hour:14,day:"Wed",incidents:3},{hour:17,day:"Sun",incidents:3}
+  ],
+  driveoff_totals: {incidents:144,revenue_loss:5983.02,gallons_lost:1725.1},
+  ust_status: [
+    {station:"Elm St. BP",tank:"TANK_3",grade:"DIESEL",variance:-10.0,alert:"WATCH",epa_threshold:360.46},
+    {station:"Pine Rd. Chevron",tank:"TANK_2",grade:"PREMIUM",variance:-5.0,alert:"OK",epa_threshold:272.55},
+    {station:"Main St. Citgo",tank:"TANK_3",grade:"DIESEL",variance:-5.0,alert:"OK",epa_threshold:327.21},
+    {station:"Oak Ave Shell",tank:"TANK_1",grade:"REGULAR",variance:-5.0,alert:"OK",epa_threshold:948.45},
+    {station:"Maple Ln. Valero",tank:"TANK_2",grade:"PREMIUM",variance:5.0,alert:"OK",epa_threshold:286.02},
+    {station:"Oak Ave Shell",tank:"TANK_3",grade:"DIESEL",variance:-5.0,alert:"OK",epa_threshold:302.36},
+    {station:"Main St. Citgo",tank:"TANK_1",grade:"REGULAR",variance:5.0,alert:"OK",epa_threshold:923.39},
+    {station:"Elm St. BP",tank:"TANK_2",grade:"PREMIUM",variance:5.0,alert:"OK",epa_threshold:270.94},
+    {station:"Maple Ln. Valero",tank:"TANK_3",grade:"DIESEL",variance:-4.0,alert:"OK",epa_threshold:311.45},
+    {station:"Pine Rd. Chevron",tank:"TANK_3",grade:"DIESEL",variance:3.0,alert:"OK",epa_threshold:347.90},
+    {station:"Pine Rd. Chevron",tank:"TANK_1",grade:"REGULAR",variance:-2.0,alert:"OK",epa_threshold:948.72},
+    {station:"Main St. Citgo",tank:"TANK_2",grade:"PREMIUM",variance:2.0,alert:"OK",epa_threshold:234.40},
+    {station:"Maple Ln. Valero",tank:"TANK_1",grade:"REGULAR",variance:2.0,alert:"OK",epa_threshold:832.81},
+    {station:"Oak Ave Shell",tank:"TANK_2",grade:"PREMIUM",variance:1.0,alert:"OK",epa_threshold:296.45},
+    {station:"Elm St. BP",tank:"TANK_1",grade:"REGULAR",variance:0.0,alert:"OK",epa_threshold:839.01}
+  ],
+  ust_alert_levels: [{level:"WATCH",count:12,avg_var:11.6,worst:14.0},{level:"OK",count:453,avg_var:2.9,worst:9.0}],
+  ust_leak_detection: [
+    {date:"Apr 01",daily:-7,monthly:-7,threshold:130},
+    {date:"Apr 02",daily:-6,monthly:-13,threshold:130},
+    {date:"Apr 03",daily:-3,monthly:-16,threshold:130},
+    {date:"Apr 04",daily:-12,monthly:-28,threshold:130},
+    {date:"Apr 05",daily:-8,monthly:-36,threshold:130},
+    {date:"Apr 06",daily:-4,monthly:-40,threshold:130},
+    {date:"Apr 07",daily:-13,monthly:-53,threshold:130},
+    {date:"Apr 08",daily:-11,monthly:-64,threshold:130},
+    {date:"Apr 09",daily:-6,monthly:-70,threshold:130},
+    {date:"Apr 10",daily:-3,monthly:-73,threshold:130},
+    {date:"Apr 11",daily:-5,monthly:-78,threshold:172},
+    {date:"Apr 12",daily:-10,monthly:-88,threshold:172},
+    {date:"Apr 13",daily:-11,monthly:-99,threshold:172},
+    {date:"Apr 14",daily:-6,monthly:-105,threshold:172},
+    {date:"Apr 15",daily:-8,monthly:-113,threshold:240},
+    {date:"Apr 16",daily:-10,monthly:-123,threshold:240},
+    {date:"Apr 17",daily:-11,monthly:-134,threshold:240},
+    {date:"Apr 18",daily:-6,monthly:-140,threshold:241},
+    {date:"Apr 19",daily:-4,monthly:-144,threshold:302},
+    {date:"Apr 20",daily:-13,monthly:-157,threshold:302},
+    {date:"Apr 21",daily:-5,monthly:-162,threshold:302},
+    {date:"Apr 22",daily:-7,monthly:-169,threshold:302},
+    {date:"Apr 23",daily:-14,monthly:-183,threshold:360},
+    {date:"Apr 24",daily:-8,monthly:-191,threshold:360},
+    {date:"Apr 25",daily:-10,monthly:-201,threshold:360}
+  ],
+  recon_log: [
+    {station:"Elm St. BP",tank:"TANK_3",grade:"DIESEL",date:"2026-04-25",variance:-10.0,alert:"WATCH",notes:"Minor variance noted. Added to monitoring log."},
+    {station:"Elm St. BP",tank:"TANK_3",grade:"DIESEL",date:"2026-04-23",variance:-14.0,alert:"WATCH",notes:"Minor variance noted. Added to monitoring log."},
+    {station:"Elm St. BP",tank:"TANK_3",grade:"DIESEL",date:"2026-04-20",variance:-13.0,alert:"WATCH",notes:"Minor variance noted. Added to monitoring log."},
+    {station:"Elm St. BP",tank:"TANK_3",grade:"DIESEL",date:"2026-04-17",variance:-11.0,alert:"WATCH",notes:"Minor variance noted. Added to monitoring log."},
+    {station:"Elm St. BP",tank:"TANK_3",grade:"DIESEL",date:"2026-04-16",variance:-10.0,alert:"WATCH",notes:"Minor variance noted. Added to monitoring log."}
+  ]
+};
+
+// ===== APP STATE =====
+let currentPage = 'home';
+let currentStation = 'ALL';
+let charts = {};
+
+// ===== INIT =====
+function init() {
+  populateStationSelector();
+  setupTabs();
+  setupStationSelector();
+  renderPage();
+}
+
+function populateStationSelector() {
+  const sel = document.getElementById('stationSelector');
+  window.DATA.stations.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${s.name} (${s.city}, ${s.state})`;
+    sel.appendChild(opt);
+  });
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPage = btn.dataset.page;
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + currentPage).classList.add('active');
+      renderPage();
+    });
+  });
+}
+
+function setupStationSelector() {
+  document.getElementById('stationSelector').addEventListener('change', (e) => {
+    currentStation = e.target.value;
+    renderPage();
+  });
+}
+
+function renderPage() {
+  destroyCharts();
+  switch(currentPage) {
+    case 'home': renderHome(); break;
+    case 'pl': renderPL(); break;
+    case 'pricing': renderPricing(); break;
+    case 'cstore': renderCStore(); break;
+    case 'driveoff': renderDriveOff(); break;
+    case 'ust': renderUST(); break;
+  }
+}
+
+function destroyCharts() {
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+}
+
+function fmt(n, prefix='$') { return prefix + n.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
+function fmtDec(n, prefix='$', dec=3) { return prefix + n.toFixed(dec); }
+
+function getStationName(id) {
+  const s = window.DATA.stations.find(x => x.id === id);
+  return s ? s.name : id;
+}
+
+function alertBadge(level) {
+  const cls = level === 'CRITICAL' ? 'badge-critical' : level === 'WATCH' ? 'badge-watch' : level === 'WARNING' ? 'badge-warning' : 'badge-ok';
+  return `<span class="badge ${cls}">${level}</span>`;
+}
+
+function recBadge(rec) {
+  const cls = rec === 'DISCONTINUE' ? 'badge-discontinue' : rec === 'RETURN' ? 'badge-return' : 'badge-markdown';
+  return `<span class="badge ${cls}">${rec}</span>`;
+}
+
+// ===== HOME PAGE =====
+function renderHome() {
+  const kpis = window.DATA.pl_kpis;
+  const totalProfit = Object.values(kpis).reduce((s, k) => s + k.net_profit, 0);
+  const totalGallons = Object.values(kpis).reduce((s, k) => s + k.gallons, 0);
+
+  document.getElementById('home-kpis').innerHTML = `
+    <div class="kpi-card"><div class="label">Net Profit (30d)</div><div class="value">${fmt(totalProfit)}</div><div class="sub">All stations combined</div></div>
+    <div class="kpi-card"><div class="label">Gallons Sold (30d)</div><div class="value">${totalGallons.toLocaleString()}</div><div class="sub">All stations combined</div></div>
+    <div class="kpi-card"><div class="label">Price Alerts (30d)</div><div class="value" style="color:#E65100">451</div><div class="sub">Priced above competitors</div></div>
+    <div class="kpi-card"><div class="label">Drive-Off Losses (30d)</div><div class="value" style="color:#B71C1C">${fmt(5983)}</div><div class="sub">144 incidents</div></div>
+  `;
+
+  // Line chart
+  const labels = window.DATA.pl_trend.map(d => d.date);
+  const colors = ['#1B5E20','#4CAF50','#81C784','#FF9800','#2196F3'];
+  const datasets = window.DATA.stations.map((s, i) => ({
+    label: s.name,
+    data: window.DATA.pl_trend.map(d => d[s.id]),
+    borderColor: colors[i],
+    backgroundColor: colors[i] + '22',
+    tension: 0.3,
+    borderWidth: 2,
+    pointRadius: 3
+  }));
+
+  charts.homePL = new Chart(document.getElementById('homePLChart'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: false, ticks: { callback: v => '$' + v } } } }
+  });
+
+  // Table
+  let html = '<thead><tr><th>Station</th><th>City</th><th>Net Profit</th><th>Gallons</th><th>Margin/Gal</th></tr></thead><tbody>';
+  window.DATA.stations.forEach(s => {
+    const k = kpis[s.id];
+    html += `<tr><td>${s.name}</td><td>${s.city}, ${s.state}</td><td>${fmt(k.net_profit)}</td><td>${k.gallons.toLocaleString()}</td><td>${fmtDec(k.margin_per_gal)}</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('homeTable').innerHTML = html;
+}
+
+// ===== DAILY P&L PAGE =====
+function renderPL() {
+  const sid = currentStation === 'ALL' ? 'STN-001' : currentStation;
+  const kpi = window.DATA.pl_kpis[sid];
+  const sName = getStationName(sid);
+
+  document.getElementById('pl-kpis').innerHTML = `
+    <div class="kpi-card"><div class="label">Net Profit (30d)</div><div class="value">${fmt(kpi.net_profit)}</div><div class="sub">${sName}</div></div>
+    <div class="kpi-card"><div class="label">Fuel Margin/Gal</div><div class="value">${fmtDec(kpi.margin_per_gal)}</div><div class="sub">30-day average</div></div>
+    <div class="kpi-card"><div class="label">C-Store Profit</div><div class="value">${fmt(kpi.cstore_profit)}</div><div class="sub">30-day total</div></div>
+    <div class="kpi-card"><div class="label">Labor Cost</div><div class="value" style="color:#E65100">${fmt(kpi.labor_cost)}</div><div class="sub">30-day total</div></div>
+  `;
+
+  const labels = window.DATA.pl_trend.map(d => d.date);
+  const data = window.DATA.pl_trend.map(d => d[sid]);
+
+  charts.plBar = new Chart(document.getElementById('plBarChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Daily Profit', data, backgroundColor: '#4CAF50', borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v } } } }
+  });
+
+  // Breakdown chart
+  const fuelMarginProfit = kpi.net_profit - kpi.cstore_profit;
+  charts.plBreakdown = new Chart(document.getElementById('plBreakdownChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Fuel Margin', 'C-Store Profit', 'Labor Cost'],
+      datasets: [{
+        data: [fuelMarginProfit, kpi.cstore_profit, kpi.labor_cost],
+        backgroundColor: ['#1B5E20', '#4CAF50', '#FF5722'],
+        borderRadius: 4
+      }]
+    },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => '$' + v.toLocaleString() } } } }
+  });
+}
+
+// ===== COMPETITOR PRICING PAGE =====
+function renderPricing() {
+  const sid = currentStation === 'ALL' ? 'STN-001' : currentStation;
+  const gaps = window.DATA.price_gaps[sid];
+  const sName = getStationName(sid);
+
+  const posCount = gaps.filter(g => g.gap > 0.005).length;
+  const negCount = gaps.filter(g => g.gap < -0.005).length;
+
+  document.getElementById('pricing-kpis').innerHTML = `
+    <div class="kpi-card"><div class="label">Price Alerts (30d)</div><div class="value" style="color:#E65100">451</div><div class="sub">Priced above competition</div></div>
+    <div class="kpi-card"><div class="label">Avg Gap (High)</div><div class="value" style="color:#E65100">+$0.063</div><div class="sub">When priced above</div></div>
+    <div class="kpi-card"><div class="label">Grades Above</div><div class="value" style="color:#B71C1C">${posCount}</div><div class="sub">${sName} currently</div></div>
+    <div class="kpi-card"><div class="label">Grades Below</div><div class="value" style="color:#1B5E20">${negCount}</div><div class="sub">${sName} currently</div></div>
+  `;
+
+  const labels = gaps.map(g => g.grade);
+  charts.pricing = new Chart(document.getElementById('pricingChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Own Price', data: gaps.map(g => g.own), backgroundColor: '#1B5E20', borderRadius: 4 },
+        { label: 'Competitor Avg', data: gaps.map(g => g.avg_comp), backgroundColor: '#A5D6A7', borderRadius: 4 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: false, ticks: { callback: v => '$' + v.toFixed(2) } } } }
+  });
+
+  let html = '<thead><tr><th>Grade</th><th>Own Price</th><th>Competitor Avg</th><th>Gap</th></tr></thead><tbody>';
+  gaps.forEach(g => {
+    const cls = g.gap > 0.005 ? 'gap-positive' : g.gap < -0.005 ? 'gap-negative' : 'gap-neutral';
+    const sign = g.gap > 0 ? '+' : '';
+    html += `<tr><td>${g.grade}</td><td>$${g.own.toFixed(3)}</td><td>$${g.avg_comp.toFixed(3)}</td><td class="${cls}">${sign}$${g.gap.toFixed(3)}</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('pricingTable').innerHTML = html;
+}
+
+// ===== C-STORE INVENTORY PAGE =====
+function renderCStore() {
+  const totalDeadItems = window.DATA.dead_stock_summary.reduce((s, d) => s + d.items, 0);
+  const totalDeadValue = window.DATA.dead_stock_summary.reduce((s, d) => s + d.value, 0);
+  const criticalReorders = window.DATA.reorders.filter(r => r.urgency === 'CRITICAL').length;
+
+  document.getElementById('cstore-kpis').innerHTML = `
+    <div class="kpi-card"><div class="label">Dead Stock Items</div><div class="value" style="color:#E65100">${totalDeadItems}</div><div class="sub">Slow/no-moving SKUs</div></div>
+    <div class="kpi-card"><div class="label">Shelf Value at Risk</div><div class="value" style="color:#E65100">${fmt(totalDeadValue, '$')}</div><div class="sub">Markdown + Return + Discontinue</div></div>
+    <div class="kpi-card"><div class="label">Critical Reorders</div><div class="value" style="color:#B71C1C">${criticalReorders}</div><div class="sub">Out of stock items</div></div>
+    <div class="kpi-card"><div class="label">Reorder Urgency</div><div class="value" style="color:#B71C1C">CRITICAL</div><div class="sub">Multiple stockouts active</div></div>
+  `;
+
+  // Dead stock table
+  let html = '<thead><tr><th>Station</th><th>Product</th><th>Days Idle</th><th>Sold (90d)</th><th>On Hand</th><th>Value</th><th>Recommendation</th></tr></thead><tbody>';
+  window.DATA.dead_stock_detail.forEach(d => {
+    html += `<tr><td>${d.station}</td><td>${d.product}</td><td>${d.days_idle}</td><td>${d.sold_90d}</td><td>${d.on_hand}</td><td>$${d.value.toFixed(2)}</td><td>${recBadge(d.rec)} ${d.markdown}% off</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('deadStockTable').innerHTML = html;
+
+  // Reorder table
+  html = '<thead><tr><th>Station</th><th>Product</th><th>Category</th><th>Distributor</th><th>On Hand</th><th>Daily Sales</th><th>Reorder Qty</th><th>Urgency</th></tr></thead><tbody>';
+  window.DATA.reorders.forEach(r => {
+    html += `<tr><td>${r.station}</td><td>${r.product}</td><td>${r.category}</td><td>${r.distributor}</td><td>${r.on_hand}</td><td>${r.daily_sales.toFixed(2)}</td><td>${r.reorder_qty}</td><td>${alertBadge(r.urgency)}</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('reorderTable').innerHTML = html;
+}
+
+// ===== DRIVE-OFF TRACKER PAGE =====
+function renderDriveOff() {
+  const totals = window.DATA.driveoff_totals;
+
+  document.getElementById('driveoff-kpis').innerHTML = `
+    <div class="kpi-card"><div class="label">Total Incidents (30d)</div><div class="value" style="color:#B71C1C">${totals.incidents}</div><div class="sub">All stations</div></div>
+    <div class="kpi-card"><div class="label">Revenue Loss</div><div class="value" style="color:#B71C1C">${fmt(totals.revenue_loss, '$')}</div><div class="sub">30-day total</div></div>
+    <div class="kpi-card"><div class="label">Gallons Lost</div><div class="value" style="color:#E65100">${totals.gallons_lost.toLocaleString()}</div><div class="sub">30-day total</div></div>
+    <div class="kpi-card"><div class="label">Highest Risk Pump</div><div class="value" style="color:#B71C1C">#3</div><div class="sub">53 incidents (37%)</div></div>
+  `;
+
+  // Pump bar chart
+  const pumpData = window.DATA.driveoff_pump_risk;
+  charts.driveoffPump = new Chart(document.getElementById('driveoffPumpChart'), {
+    type: 'bar',
+    data: {
+      labels: pumpData.map(p => 'Pump ' + p.pump),
+      datasets: [{
+        label: 'Incidents',
+        data: pumpData.map(p => p.incidents),
+        backgroundColor: pumpData.map(p => p.pump === 3 ? '#B71C1C' : '#FF8A65'),
+        borderRadius: 4
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Heatmap table
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hours = [];
+  for (let h = 6; h <= 23; h++) hours.push(h);
+
+  const heatData = {};
+  window.DATA.driveoff_hourly.forEach(d => {
+    const key = d.day + '-' + d.hour;
+    heatData[key] = (heatData[key] || 0) + d.incidents;
+  });
+
+  let html = '<thead><tr><th>Hour</th>';
+  days.forEach(d => { html += `<th>${d}</th>`; });
+  html += '</tr></thead><tbody>';
+  hours.forEach(h => {
+    html += `<tr><td>${h}:00</td>`;
+    days.forEach(d => {
+      const val = heatData[d + '-' + h] || 0;
+      const cls = val === 0 ? 'heat-0' : val === 1 ? 'heat-1' : val === 2 ? 'heat-2' : val === 3 ? 'heat-3' : val === 4 ? 'heat-4' : val === 5 ? 'heat-5' : 'heat-6';
+      html += `<td class="${cls}">${val || ''}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('driveoffHeatmap').innerHTML = html;
+}
+
+// ===== UST RECONCILIATION PAGE =====
+function renderUST() {
+  const tankCount = window.DATA.ust_status.length;
+  const watchCount = window.DATA.ust_alert_levels.find(a => a.level === 'WATCH')?.count || 0;
+  const worstVar = window.DATA.ust_alert_levels.find(a => a.level === 'WATCH')?.worst || 0;
+
+  document.getElementById('ust-kpis').innerHTML = `
+    <div class="kpi-card"><div class="label">Tanks Monitored</div><div class="value">${tankCount}</div><div class="sub">Across all stations</div></div>
+    <div class="kpi-card"><div class="label">Active WATCH Alerts</div><div class="value" style="color:#E65100">${watchCount}</div><div class="sub">Require monitoring</div></div>
+    <div class="kpi-card"><div class="label">Worst Variance</div><div class="value" style="color:#B71C1C">-${worstVar} gal</div><div class="sub">Elm St. BP TANK_3</div></div>
+    <div class="kpi-card"><div class="label">EPA Exceedances</div><div class="value" style="color:#1B5E20">0</div><div class="sub">All within threshold</div></div>
+  `;
+
+  // Leak detection chart — THE money chart
+  const leakData = window.DATA.ust_leak_detection;
+  const labels = leakData.map(d => d.date);
+
+  charts.ustLeak = new Chart(document.getElementById('ustLeakChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line',
+          label: 'Cumulative Variance (gal)',
+          data: leakData.map(d => Math.abs(d.monthly)),
+          borderColor: '#B71C1C',
+          backgroundColor: '#B71C1C22',
+          tension: 0.3,
+          borderWidth: 3,
+          pointRadius: 2,
+          fill: true,
+          yAxisID: 'y',
+          order: 1
+        },
+        {
+          type: 'line',
+          label: 'EPA Threshold (gal)',
+          data: leakData.map(d => d.threshold),
+          borderColor: '#1B5E20',
+          borderWidth: 2,
+          borderDash: [8, 4],
+          pointRadius: 0,
+          fill: false,
+          yAxisID: 'y',
+          order: 2
+        },
+        {
+          type: 'bar',
+          label: 'Daily Variance (gal)',
+          data: leakData.map(d => Math.abs(d.daily)),
+          backgroundColor: '#FF8A6588',
+          borderRadius: 2,
+          yAxisID: 'y1',
+          order: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        y: { type: 'linear', position: 'left', title: { display: true, text: 'Cumulative / Threshold (gal)' }, beginAtZero: true },
+        y1: { type: 'linear', position: 'right', title: { display: true, text: 'Daily Variance (gal)' }, beginAtZero: true, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+
+  // Tank status table
+  let html = '<thead><tr><th>Station</th><th>Tank</th><th>Grade</th><th>Variance (gal)</th><th>Alert</th><th>EPA Threshold</th></tr></thead><tbody>';
+  window.DATA.ust_status.forEach(t => {
+    html += `<tr><td>${t.station}</td><td>${t.tank}</td><td>${t.grade}</td><td>${t.variance > 0 ? '+' : ''}${t.variance.toFixed(1)}</td><td>${alertBadge(t.alert)}</td><td>${t.epa_threshold.toFixed(2)} gal</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('ustStatusTable').innerHTML = html;
+
+  // Recon log table
+  html = '<thead><tr><th>Date</th><th>Station</th><th>Tank</th><th>Grade</th><th>Variance</th><th>Alert</th><th>Notes</th></tr></thead><tbody>';
+  window.DATA.recon_log.forEach(r => {
+    html += `<tr><td>${r.date}</td><td>${r.station}</td><td>${r.tank}</td><td>${r.grade}</td><td>${r.variance.toFixed(1)} gal</td><td>${alertBadge(r.alert)}</td><td>${r.notes}</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('ustReconTable').innerHTML = html;
+}
+
+// Boot
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

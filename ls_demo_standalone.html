@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liquor Store AI & Analytics Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+header { background: #722F37; color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+header h1 { font-size: 1.4rem; font-weight: 600; }
+header .subtitle { font-size: 0.85rem; opacity: 0.85; }
+.store-selector { display: flex; align-items: center; gap: 8px; }
+.store-selector label { font-size: 0.85rem; color: #fff; }
+.store-selector select { padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.85rem; }
+.tabs { display: flex; background: #fff; border-bottom: 2px solid #e0e0e0; padding: 0 24px; overflow-x: auto; }
+.tab { padding: 12px 20px; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: #666; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; }
+.tab:hover { color: #722F37; }
+.tab.active { color: #722F37; border-bottom-color: #722F37; }
+.content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.page { display: none; }
+.page.active { display: block; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.metric-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.metric-card .label { font-size: 0.75rem; text-transform: uppercase; color: #888; margin-bottom: 4px; letter-spacing: 0.5px; }
+.metric-card .value { font-size: 1.5rem; font-weight: 700; color: #333; }
+.metric-card .sub { font-size: 0.75rem; color: #888; margin-top: 4px; }
+.metric-card.red { border-left: 4px solid #dc3545; }
+.metric-card.orange { border-left: 4px solid #fd7e14; }
+.metric-card.yellow { border-left: 4px solid #ffc107; }
+.metric-card.green { border-left: 4px solid #28a745; }
+.chart-container { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+.chart-container h3 { font-size: 0.9rem; color: #555; margin-bottom: 12px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+@media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.table-wrap { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; overflow-x: auto; }
+.table-wrap h3 { font-size: 0.9rem; color: #555; margin-bottom: 12px; }
+table th { background: #f8f8f8; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #e0e0e0; white-space: nowrap; }
+table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+table tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+.badge-red { background: #fce4e4; color: #dc3545; }
+.badge-orange { background: #fff3e0; color: #e65100; }
+.badge-yellow { background: #fff9c4; color: #f57f17; }
+.badge-green { background: #e8f5e9; color: #2e7d32; }
+.badge-blue { background: #e3f2fd; color: #1565c0; }
+.chat-container { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-width: 800px; }
+.chat-bubble { margin-bottom: 16px; display: flex; gap: 10px; }
+.chat-bubble.user { flex-direction: row-reverse; }
+.chat-bubble .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+.chat-bubble.user .avatar { background: #722F37; color: #fff; }
+.chat-bubble.assistant .avatar { background: #e3f2fd; color: #1565c0; }
+.chat-bubble .msg { padding: 12px 16px; border-radius: 12px; max-width: 600px; font-size: 0.85rem; line-height: 1.5; }
+.chat-bubble.user .msg { background: #722F37; color: #fff; border-bottom-right-radius: 4px; }
+.chat-bubble.assistant .msg { background: #f5f5f5; color: #333; border-bottom-left-radius: 4px; }
+.success-banner { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+.success-banner .icon { font-size: 1.2rem; }
+.success-banner .text { font-size: 0.85rem; color: #2e7d32; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Liquor Store AI & Analytics</h1>
+    <div class="subtitle">Real-time insights across POS, inventory, forecasting & supplier performance</div>
+  </div>
+  <div class="store-selector">
+    <label for="storeSelect">Store:</label>
+    <select id="storeSelect" onchange="switchStore(this.value)">
+      <option value="S001">LS Downtown</option>
+      <option value="S002">LS Suburban</option>
+      <option value="S003">LS Airport</option>
+    </select>
+  </div>
+</header>
+
+<div class="tabs" id="tabBar">
+  <div class="tab active" data-page="pos">POS Dashboard</div>
+  <div class="tab" data-page="inventory">Inventory Alerts</div>
+  <div class="tab" data-page="deadstock">Dead Stock Report</div>
+  <div class="tab" data-page="demand">Demand Forecast</div>
+  <div class="tab" data-page="recommender">AI Recommender</div>
+  <div class="tab" data-page="distributor">Distributor Scorecard</div>
+</div>
+
+<div class="content">
+  <div class="page active" id="page-pos"></div>
+  <div class="page" id="page-inventory"></div>
+  <div class="page" id="page-deadstock"></div>
+  <div class="page" id="page-demand"></div>
+  <div class="page" id="page-recommender"></div>
+  <div class="page" id="page-distributor"></div>
+</div>
+
+<script>
+window.DATA = {
+  stores: [
+    {"id":"S001","name":"LS Downtown","city":"Austin","state":"TX"},
+    {"id":"S002","name":"LS Suburban","city":"Austin","state":"TX"},
+    {"id":"S003","name":"LS Airport","city":"Austin","state":"TX"}
+  ],
+  pos_kpis: {
+    "S001":{"revenue":179235.18,"margin":66695.18,"txns":2525,"units":7482,"skus":150,"avg_basket":70.98},
+    "S002":{"revenue":130653.01,"margin":48415.01,"txns":2155,"units":5299,"skus":150,"avg_basket":60.63},
+    "S003":{"revenue":85721.73,"margin":31827.23,"txns":1764,"units":3527,"skus":150,"avg_basket":48.60}
+  },
+  pos_trend: {
+    "S001":[{"date":"Apr 08","rev":7631.86,"margin":2820.86},{"date":"Apr 09","rev":8555.55,"margin":3191.55},{"date":"Apr 10","rev":12653.77,"margin":4704.77},{"date":"Apr 11","rev":15965.40,"margin":5957.90},{"date":"Apr 12","rev":9712.75,"margin":3589.75},{"date":"Apr 13","rev":6806.85,"margin":2543.85},{"date":"Apr 14","rev":6190.31,"margin":2315.31},{"date":"Apr 15","rev":7548.74,"margin":2801.24},{"date":"Apr 16","rev":7391.10,"margin":2722.60},{"date":"Apr 17","rev":12577.78,"margin":4673.28},{"date":"Apr 18","rev":16695.25,"margin":6211.75},{"date":"Apr 19","rev":9293.03,"margin":3485.53},{"date":"Apr 20","rev":8210.69,"margin":3040.69},{"date":"Apr 21","rev":6713.16,"margin":2511.66},{"date":"Apr 22","rev":7474.82,"margin":2777.32},{"date":"Apr 23","rev":7772.89,"margin":2890.39},{"date":"Apr 24","rev":13523.48,"margin":4994.98},{"date":"Apr 25","rev":14517.75,"margin":5461.75}],
+    "S002":[{"date":"Apr 08","rev":5865.82,"margin":2138.82},{"date":"Apr 09","rev":5044.91,"margin":1883.91},{"date":"Apr 10","rev":7776.54,"margin":2896.54},{"date":"Apr 11","rev":11717.47,"margin":4330.47},{"date":"Apr 12","rev":8338.75,"margin":3093.75},{"date":"Apr 13","rev":4535.15,"margin":1662.15},{"date":"Apr 14","rev":5567.61,"margin":2060.11},{"date":"Apr 15","rev":6701.32,"margin":2481.82},{"date":"Apr 16","rev":5835.82,"margin":2140.32},{"date":"Apr 17","rev":8316.40,"margin":3089.90},{"date":"Apr 18","rev":12057.23,"margin":4484.73},{"date":"Apr 19","rev":7896.71,"margin":2919.21},{"date":"Apr 20","rev":5453.76,"margin":2028.26},{"date":"Apr 21","rev":5347.94,"margin":1960.44},{"date":"Apr 22","rev":5633.03,"margin":2060.53},{"date":"Apr 23","rev":4850.90,"margin":1822.90},{"date":"Apr 24","rev":7834.85,"margin":2921.85},{"date":"Apr 25","rev":11878.80,"margin":4439.30}],
+    "S003":[{"date":"Apr 08","rev":3254.83,"margin":1188.33},{"date":"Apr 09","rev":3674.41,"margin":1374.41},{"date":"Apr 10","rev":6014.31,"margin":2242.31},{"date":"Apr 11","rev":8387.74,"margin":3076.74},{"date":"Apr 12","rev":4954.79,"margin":1870.29},{"date":"Apr 13","rev":3352.59,"margin":1234.09},{"date":"Apr 14","rev":2847.81,"margin":1069.81},{"date":"Apr 15","rev":3224.57,"margin":1206.57},{"date":"Apr 16","rev":3366.53,"margin":1255.03},{"date":"Apr 17","rev":6428.43,"margin":2391.93},{"date":"Apr 18","rev":7389.83,"margin":2771.33},{"date":"Apr 19","rev":4664.95,"margin":1744.95},{"date":"Apr 20","rev":3177.60,"margin":1177.60},{"date":"Apr 21","rev":3140.81,"margin":1166.31},{"date":"Apr 22","rev":3331.75,"margin":1239.75},{"date":"Apr 23","rev":3599.57,"margin":1341.57},{"date":"Apr 24","rev":5463.71,"margin":2022.21},{"date":"Apr 25","rev":9447.50,"margin":3454.00}]
+  },
+  pos_categories: {
+    "S001":[{"category":"Spirits","revenue":111052.70,"units":3230},{"category":"Beer","revenue":40282.01,"units":2699},{"category":"Wine","revenue":23786.44,"units":1256},{"category":"RTD","revenue":3347.66,"units":234},{"category":"Non-Alcohol","revenue":766.37,"units":63}],
+    "S002":[{"category":"Spirits","revenue":81557.77,"units":2323},{"category":"Beer","revenue":28429.21,"units":1879},{"category":"Wine","revenue":17408.39,"units":861},{"category":"RTD","revenue":2552.22,"units":178},{"category":"Non-Alcohol","revenue":705.42,"units":58}],
+    "S003":[{"category":"Spirits","revenue":53689.52,"units":1548},{"category":"Beer","revenue":18251.70,"units":1230},{"category":"Wine","revenue":11857.98,"units":602},{"category":"RTD","revenue":1483.92,"units":108},{"category":"Non-Alcohol","revenue":438.61,"units":39}]
+  },
+  pos_top_products: {
+    "S001":[{"sku":"SPR-036","name":"Clase Azul Reposado 750ml","category":"Spirits","revenue":7989.53,"units":47,"margin_pct":35.3},{"sku":"SPR-058","name":"Clase Azul Plata 750ml","category":"Spirits","revenue":4159.48,"units":52,"margin_pct":35.0},{"sku":"WIN-002","name":"Caymus Cabernet Sauvignon 750ml","category":"Wine","revenue":3419.62,"units":38,"margin_pct":35.5},{"sku":"SPR-025","name":"Patron Silver Tequila 750ml","category":"Spirits","revenue":2969.34,"units":66,"margin_pct":33.3},{"sku":"SPR-057","name":"Casamigos Reposado Tequila 750ml","category":"Spirits","revenue":2849.43,"units":57,"margin_pct":34.0},{"sku":"SPR-053","name":"Angels Envy Bourbon 750ml","category":"Spirits","revenue":2804.49,"units":51,"margin_pct":34.5},{"sku":"SPR-015","name":"Macallan 12yr Double Cask 750ml","category":"Spirits","revenue":2729.61,"units":39,"margin_pct":31.4},{"sku":"SPR-060","name":"Laphroaig 10yr Scotch 750ml","category":"Spirits","revenue":2694.51,"units":49,"margin_pct":34.5},{"sku":"SPR-033","name":"Hennessy VSOP 750ml","category":"Spirits","revenue":2519.58,"units":42,"margin_pct":33.3},{"sku":"SPR-026","name":"Don Julio Blanco Tequila 750ml","category":"Spirits","revenue":2399.52,"units":48,"margin_pct":34.0}],
+    "S002":[{"sku":"SPR-036","name":"Clase Azul Reposado 750ml","category":"Spirits","revenue":5439.68,"units":32,"margin_pct":35.3},{"sku":"SPR-058","name":"Clase Azul Plata 750ml","category":"Spirits","revenue":3359.58,"units":42,"margin_pct":35.0},{"sku":"SPR-053","name":"Angels Envy Bourbon 750ml","category":"Spirits","revenue":2914.47,"units":53,"margin_pct":34.5},{"sku":"SPR-015","name":"Macallan 12yr Double Cask 750ml","category":"Spirits","revenue":2869.59,"units":41,"margin_pct":31.4},{"sku":"WIN-002","name":"Caymus Cabernet Sauvignon 750ml","category":"Wine","revenue":2519.72,"units":28,"margin_pct":35.5},{"sku":"WIN-012","name":"Veuve Clicquot Yellow Label 750ml","category":"Wine","revenue":2144.61,"units":39,"margin_pct":30.9},{"sku":"SPR-022","name":"Hendricks Gin 750ml","category":"Spirits","revenue":2108.43,"units":57,"margin_pct":35.1},{"sku":"SPR-057","name":"Casamigos Reposado Tequila 750ml","category":"Spirits","revenue":2049.59,"units":41,"margin_pct":34.0},{"sku":"SPR-025","name":"Patron Silver Tequila 750ml","category":"Spirits","revenue":1709.62,"units":38,"margin_pct":33.3},{"sku":"SPR-060","name":"Laphroaig 10yr Scotch 750ml","category":"Spirits","revenue":1704.69,"units":31,"margin_pct":34.5}],
+    "S003":[{"sku":"SPR-036","name":"Clase Azul Reposado 750ml","category":"Spirits","revenue":3399.80,"units":20,"margin_pct":35.3},{"sku":"WIN-002","name":"Caymus Cabernet Sauvignon 750ml","category":"Wine","revenue":1799.80,"units":20,"margin_pct":35.5},{"sku":"SPR-053","name":"Angels Envy Bourbon 750ml","category":"Spirits","revenue":1704.69,"units":31,"margin_pct":34.5},{"sku":"SPR-058","name":"Clase Azul Plata 750ml","category":"Spirits","revenue":1679.79,"units":21,"margin_pct":35.0},{"sku":"SPR-015","name":"Macallan 12yr Double Cask 750ml","category":"Spirits","revenue":1609.77,"units":23,"margin_pct":31.4},{"sku":"SPR-060","name":"Laphroaig 10yr Scotch 750ml","category":"Spirits","revenue":1539.72,"units":28,"margin_pct":34.5},{"sku":"SPR-033","name":"Hennessy VSOP 750ml","category":"Spirits","revenue":1499.75,"units":25,"margin_pct":33.3},{"sku":"SPR-025","name":"Patron Silver Tequila 750ml","category":"Spirits","revenue":1439.68,"units":32,"margin_pct":33.3},{"sku":"SPR-057","name":"Casamigos Reposado Tequila 750ml","category":"Spirits","revenue":1399.72,"units":28,"margin_pct":34.0},{"sku":"SPR-014","name":"Glenfiddich 12yr 750ml","category":"Spirits","revenue":1349.70,"units":30,"margin_pct":33.3}]
+  },
+  inventory_summary: {
+    "S001":{"OUT_OF_STOCK":0,"CRITICAL":1,"LOW_STOCK":16,"OK":133},
+    "S002":{"OUT_OF_STOCK":0,"CRITICAL":3,"LOW_STOCK":15,"OK":132},
+    "S003":{"OUT_OF_STOCK":0,"CRITICAL":4,"LOW_STOCK":11,"OK":135}
+  },
+  inventory_alerts: {
+    "S001":[{"sku":"SPR-012","product":"Jameson Irish Whiskey 750ml","status":"CRITICAL","on_hand":5,"reorder_pt":17,"days_left":2.0,"avg_daily":2.47},{"sku":"SPR-037","product":"Ciroc Vodka 750ml","status":"LOW_STOCK","on_hand":12,"reorder_pt":25,"days_left":3.4,"avg_daily":3.50},{"sku":"BER-002","product":"Corona Extra 12pk Bottles","status":"LOW_STOCK","on_hand":14,"reorder_pt":29,"days_left":3.4,"avg_daily":4.13},{"sku":"BER-030","product":"Twisted Tea Original 12pk","status":"LOW_STOCK","on_hand":20,"reorder_pt":40,"days_left":3.5,"avg_daily":5.77},{"sku":"SPR-015","product":"Macallan 12yr Double Cask 750ml","status":"LOW_STOCK","on_hand":10,"reorder_pt":18,"days_left":3.8,"avg_daily":2.63}],
+    "S002":[{"sku":"SPR-053","product":"Angels Envy Bourbon 750ml","status":"CRITICAL","on_hand":7,"reorder_pt":20,"days_left":2.5,"avg_daily":2.80},{"sku":"SPR-020","product":"Absolut Vodka 750ml","status":"CRITICAL","on_hand":5,"reorder_pt":12,"days_left":2.9,"avg_daily":1.70},{"sku":"MIX-002","product":"Fever-Tree Tonic Water 4pk","status":"CRITICAL","on_hand":1,"reorder_pt":3,"days_left":3.0,"avg_daily":0.33},{"sku":"SPR-052","product":"Basil Hayden Bourbon 750ml","status":"LOW_STOCK","on_hand":7,"reorder_pt":15,"days_left":3.3,"avg_daily":2.13},{"sku":"BER-008","product":"Stella Artois 12pk Bottles","status":"LOW_STOCK","on_hand":14,"reorder_pt":29,"days_left":3.4,"avg_daily":4.17}],
+    "S003":[{"sku":"SPR-032","product":"Hennessy VS Cognac 750ml","status":"CRITICAL","on_hand":2,"reorder_pt":8,"days_left":1.7,"avg_daily":1.20},{"sku":"BER-024","product":"Tecate 12pk Cans","status":"CRITICAL","on_hand":5,"reorder_pt":11,"days_left":3.1,"avg_daily":1.63},{"sku":"NAL-002","product":"Athletic Brewing Free Wave IPA 6pk","status":"CRITICAL","on_hand":2,"reorder_pt":3,"days_left":6.1,"avg_daily":0.33},{"sku":"MIX-005","product":"Bloody Mary Mix Zing Zang 32oz","status":"CRITICAL","on_hand":2,"reorder_pt":3,"days_left":11.8,"avg_daily":0.17},{"sku":"SPR-052","product":"Basil Hayden Bourbon 750ml","status":"LOW_STOCK","on_hand":6,"reorder_pt":12,"days_left":3.6,"avg_daily":1.67}]
+  },
+  dead_stock_tiers: {
+    "S001":[{"tier":"A","label":"Fast movers","sku_count":140,"capital":144287.50},{"tier":"B","label":"Moderate","sku_count":10,"capital":733.50}],
+    "S002":[{"tier":"A","label":"Fast movers","sku_count":140,"capital":99854.00},{"tier":"B","label":"Moderate","sku_count":9,"capital":419.00},{"tier":"C","label":"Slow movers","sku_count":1,"capital":209.00}],
+    "S003":[{"tier":"A","label":"Fast movers","sku_count":134,"capital":74789.00},{"tier":"B","label":"Moderate","sku_count":9,"capital":1072.50},{"tier":"C","label":"Slow movers","sku_count":7,"capital":428.50}]
+  },
+  dead_stock_detail: [
+    {"store":"S002","sku":"NAL-005","product":"Seedlip Grove 42 700ml","category":"Non-Alcohol","tier":"C","sold_90d":16,"days_no_sale":13,"on_hand":11,"capital":209.00,"action":"Review \u2014 consider discount or promotion"},
+    {"store":"S003","sku":"NAL-004","product":"Ghia Le Spritz 4pk","category":"Non-Alcohol","tier":"C","sold_90d":11,"days_no_sale":16,"on_hand":12,"capital":126.00,"action":"Review \u2014 consider discount or promotion"},
+    {"store":"S003","sku":"NAL-005","product":"Seedlip Grove 42 700ml","category":"Non-Alcohol","tier":"C","sold_90d":18,"days_no_sale":15,"on_hand":5,"capital":95.00,"action":"Review \u2014 consider discount or promotion"},
+    {"store":"S003","sku":"NAL-003","product":"Liquid Death Mountain Water 12pk","category":"Non-Alcohol","tier":"C","sold_90d":10,"days_no_sale":13,"on_hand":7,"capital":77.00,"action":"Review \u2014 consider discount or promotion"},
+    {"store":"S003","sku":"NAL-001","product":"Heineken 0.0 Non-Alcoholic 6pk","category":"Non-Alcohol","tier":"C","sold_90d":19,"days_no_sale":14,"on_hand":8,"capital":52.00,"action":"Review \u2014 consider discount or promotion"},
+    {"store":"S003","sku":"MIX-003","product":"Q Ginger Beer 4pk","category":"Non-Alcohol","tier":"C","sold_90d":19,"days_no_sale":13,"on_hand":10,"capital":45.00,"action":"Review \u2014 consider discount or promotion"},
+    {"store":"S003","sku":"MIX-001","product":"Topo Chico Mineral Water 12pk","category":"Non-Alcohol","tier":"C","sold_90d":19,"days_no_sale":18,"on_hand":5,"capital":27.50,"action":"Review \u2014 consider discount or promotion"},
+    {"store":"S003","sku":"MIX-005","product":"Bloody Mary Mix Zing Zang 32oz","category":"Non-Alcohol","tier":"C","sold_90d":11,"days_no_sale":17,"on_hand":2,"capital":6.00,"action":"Review \u2014 consider discount or promotion"}
+  ],
+  demand_events: [
+    {"event":"Cinco de Mayo","date":"2026-05-05","multiplier":1.7,"categories":"Beer,Spirits,RTD"},
+    {"event":"Mothers Day","date":"2026-05-10","multiplier":1.3,"categories":"Wine,Spirits"},
+    {"event":"Memorial Day Weekend","date":"2026-05-23","multiplier":1.5,"categories":"Beer,RTD,Wine"},
+    {"event":"Fathers Day","date":"2026-06-21","multiplier":1.3,"categories":"Spirits,Beer"},
+    {"event":"July 4th","date":"2026-07-03","multiplier":1.8,"categories":"Beer,RTD,Spirits"},
+    {"event":"Labor Day Weekend","date":"2026-09-05","multiplier":1.5,"categories":"Beer,RTD,Wine"},
+    {"event":"ACL Festival","date":"2026-10-02","multiplier":1.4,"categories":"Beer,RTD,Spirits"},
+    {"event":"Halloween","date":"2026-10-31","multiplier":1.4,"categories":"Spirits,RTD,Beer"}
+  ],
+  demand_signals: {
+    "S001":{"ORDER_NOW":0,"ORDER_SOON":0,"ADEQUATE":141},
+    "S002":{"ORDER_NOW":0,"ORDER_SOON":0,"ADEQUATE":140},
+    "S003":{"ORDER_NOW":1,"ORDER_SOON":0,"ADEQUATE":136}
+  },
+  distributors: [
+    {"name":"Ben E. Keith Beverages","fill_rate":91.2,"on_time":75.0,"accuracy":66.1,"invoice_error":5.0,"score":81.9,"pos":136,"spend":50691},
+    {"name":"Lone Star Beverage Co","fill_rate":92.9,"on_time":74.3,"accuracy":65.1,"invoice_error":7.3,"score":81.7,"pos":113,"spend":44385},
+    {"name":"Andrews Distributing","fill_rate":90.1,"on_time":80.3,"accuracy":58.1,"invoice_error":10.3,"score":80.7,"pos":142,"spend":54478.50},
+    {"name":"Republic National Distributing","fill_rate":92.4,"on_time":70.5,"accuracy":60.1,"invoice_error":5.2,"score":79.7,"pos":136,"spend":59299},
+    {"name":"Breakthru Beverage Group","fill_rate":90.4,"on_time":71.2,"accuracy":60.8,"invoice_error":12.2,"score":78.3,"pos":124,"spend":55152.50},
+    {"name":"Southern Glazers Wine & Spirits","fill_rate":89.2,"on_time":70.8,"accuracy":57.1,"invoice_error":7.3,"score":77.8,"pos":117,"spend":45951}
+  ],
+  distributor_detail: [
+    {"name":"Ben E. Keith Beverages","store":"S003","fill":92.44,"on_time":80.85,"accuracy":76.60,"inv_error":4.26,"score":86.29,"tier":"Good","spend":19588},
+    {"name":"Lone Star Beverage Co","store":"S003","fill":96.18,"on_time":69.23,"accuracy":73.08,"inv_error":3.85,"score":83.47,"tier":"Good","spend":8798},
+    {"name":"Republic National Distributing","store":"S001","fill":91.87,"on_time":78.72,"accuracy":61.70,"inv_error":4.26,"score":82.47,"tier":"Good","spend":22294.50},
+    {"name":"Andrews Distributing","store":"S001","fill":92.47,"on_time":77.78,"accuracy":57.78,"inv_error":4.44,"score":81.59,"tier":"Good","spend":15608},
+    {"name":"Andrews Distributing","store":"S002","fill":90.35,"on_time":78.72,"accuracy":61.70,"inv_error":10.64,"score":80.98,"tier":"Good","spend":15333},
+    {"name":"Lone Star Beverage Co","store":"S002","fill":90.65,"on_time":80.43,"accuracy":58.70,"inv_error":10.87,"score":80.97,"tier":"Good","spend":17259.50},
+    {"name":"Republic National Distributing","store":"S002","fill":94.52,"on_time":65.38,"accuracy":67.31,"inv_error":1.92,"score":80.87,"tier":"Good","spend":20982.50},
+    {"name":"Lone Star Beverage Co","store":"S001","fill":91.72,"on_time":73.17,"accuracy":63.41,"inv_error":7.32,"score":80.64,"tier":"Good","spend":18327.50},
+    {"name":"Breakthru Beverage Group","store":"S003","fill":89.46,"on_time":78.95,"accuracy":57.89,"inv_error":10.53,"score":79.99,"tier":"Good","spend":19727},
+    {"name":"Ben E. Keith Beverages","store":"S001","fill":87.69,"on_time":77.55,"accuracy":57.14,"inv_error":4.08,"score":79.77,"tier":"Good","spend":14848},
+    {"name":"Andrews Distributing","store":"S003","fill":87.59,"on_time":84.31,"accuracy":54.90,"inv_error":15.69,"score":79.58,"tier":"Good","spend":23537.50},
+    {"name":"Ben E. Keith Beverages","store":"S002","fill":93.34,"on_time":66.67,"accuracy":64.44,"inv_error":6.67,"score":79.56,"tier":"Good","spend":16255},
+    {"name":"Southern Glazers Wine & Spirits","store":"S003","fill":90.78,"on_time":70.73,"accuracy":60.98,"inv_error":7.32,"score":79.09,"tier":"Good","spend":14294},
+    {"name":"Breakthru Beverage Group","store":"S002","fill":91.81,"on_time":68.75,"accuracy":66.67,"inv_error":20.83,"score":77.97,"tier":"Good","spend":20273.50},
+    {"name":"Southern Glazers Wine & Spirits","store":"S002","fill":88.66,"on_time":72.92,"accuracy":54.17,"inv_error":8.33,"score":77.49,"tier":"Good","spend":18216.50},
+    {"name":"Breakthru Beverage Group","store":"S001","fill":90.04,"on_time":65.79,"accuracy":57.89,"inv_error":5.26,"score":77.04,"tier":"Good","spend":15152},
+    {"name":"Southern Glazers Wine & Spirits","store":"S001","fill":88.02,"on_time":68.75,"accuracy":56.25,"inv_error":6.25,"score":76.74,"tier":"Good","spend":13440.50},
+    {"name":"Republic National Distributing","store":"S003","fill":90.85,"on_time":67.44,"accuracy":51.16,"inv_error":9.30,"score":75.87,"tier":"Good","spend":16022}
+  ]
+};
+
+let currentStore = 'S001';
+let charts = {};
+
+function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+function fmtK(n) { return n >= 1000 ? '$' + (n/1000).toFixed(1) + 'k' : fmt(n); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+function fmtInt(n) { return n.toLocaleString('en-US'); }
+
+function switchStore(id) {
+  currentStore = id;
+  renderActivePage();
+}
+
+function switchTab(page) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab[data-page="${page}"]`).classList.add('active');
+  document.getElementById('page-' + page).classList.add('active');
+  renderActivePage();
+}
+
+function getActivePage() {
+  const active = document.querySelector('.tab.active');
+  return active ? active.dataset.page : 'pos';
+}
+
+function renderActivePage() {
+  destroyCharts();
+  const page = getActivePage();
+  switch(page) {
+    case 'pos': renderPOS(); break;
+    case 'inventory': renderInventory(); break;
+    case 'deadstock': renderDeadStock(); break;
+    case 'demand': renderDemand(); break;
+    case 'recommender': renderRecommender(); break;
+    case 'distributor': renderDistributor(); break;
+  }
+}
+
+function destroyCharts() {
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+}
+
+// --- POS Dashboard ---
+function renderPOS() {
+  const kpi = window.DATA.pos_kpis[currentStore];
+  const marginPct = (kpi.margin / kpi.revenue * 100);
+  const el = document.getElementById('page-pos');
+  el.innerHTML = `
+    <div class="metrics">
+      <div class="metric-card"><div class="label">Revenue (30d)</div><div class="value">${fmt(kpi.revenue)}</div></div>
+      <div class="metric-card"><div class="label">Transactions</div><div class="value">${fmtInt(kpi.txns)}</div></div>
+      <div class="metric-card"><div class="label">Avg Basket</div><div class="value">${fmt(kpi.avg_basket)}</div></div>
+      <div class="metric-card"><div class="label">Units Sold</div><div class="value">${fmtInt(kpi.units)}</div></div>
+      <div class="metric-card"><div class="label">Gross Margin %</div><div class="value">${fmtPct(marginPct)}</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-container"><h3>Daily Revenue & Margin Trend</h3><canvas id="posTrendChart"></canvas></div>
+      <div class="chart-container"><h3>Revenue by Category</h3><canvas id="posCatChart"></canvas></div>
+    </div>
+    <div class="table-wrap"><h3>Top 10 Products</h3><table id="posTable"><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Revenue</th><th>Units</th><th>Margin %</th></tr></thead><tbody></tbody></table></div>
+  `;
+  // Trend chart
+  const trend = window.DATA.pos_trend[currentStore];
+  charts.posTrend = new Chart(document.getElementById('posTrendChart'), {
+    type: 'line',
+    data: {
+      labels: trend.map(d => d.date),
+      datasets: [
+        { label: 'Revenue', data: trend.map(d => d.rev), borderColor: '#722F37', backgroundColor: 'rgba(114,47,55,0.1)', fill: true, tension: 0.3 },
+        { label: 'Margin', data: trend.map(d => d.margin), borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', fill: true, tension: 0.3 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k' } } } }
+  });
+  // Category chart
+  const cats = window.DATA.pos_categories[currentStore];
+  const catColors = ['#722F37','#b8860b','#4a148c','#0d47a1','#2e7d32'];
+  charts.posCat = new Chart(document.getElementById('posCatChart'), {
+    type: 'bar',
+    data: {
+      labels: cats.map(c => c.category),
+      datasets: [{ label: 'Revenue', data: cats.map(c => c.revenue), backgroundColor: catColors }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k' } } } }
+  });
+  // Table
+  const tbody = document.querySelector('#posTable tbody');
+  window.DATA.pos_top_products[currentStore].forEach(p => {
+    tbody.innerHTML += `<tr><td>${p.sku}</td><td>${p.name}</td><td>${p.category}</td><td>${fmt(p.revenue)}</td><td>${fmtInt(p.units)}</td><td>${fmtPct(p.margin_pct)}</td></tr>`;
+  });
+}
+
+// --- Inventory Alerts ---
+function renderInventory() {
+  const summary = window.DATA.inventory_summary[currentStore];
+  const alerts = window.DATA.inventory_alerts[currentStore];
+  const el = document.getElementById('page-inventory');
+  el.innerHTML = `
+    <div class="metrics">
+      <div class="metric-card red"><div class="label">Out of Stock</div><div class="value">${summary.OUT_OF_STOCK}</div></div>
+      <div class="metric-card orange"><div class="label">Critical</div><div class="value">${summary.CRITICAL}</div></div>
+      <div class="metric-card yellow"><div class="label">Low Stock</div><div class="value">${summary.LOW_STOCK}</div></div>
+      <div class="metric-card green"><div class="label">OK</div><div class="value">${summary.OK}</div></div>
+    </div>
+    <div class="table-wrap"><h3>Inventory Alerts Detail</h3><table><thead><tr><th>SKU</th><th>Product</th><th>Status</th><th>On Hand</th><th>Reorder Pt</th><th>Days Left</th><th>Avg Daily</th></tr></thead><tbody id="invTable"></tbody></table></div>
+  `;
+  const tbody = document.getElementById('invTable');
+  alerts.forEach(a => {
+    let badgeClass = a.status === 'CRITICAL' ? 'badge-orange' : a.status === 'OUT_OF_STOCK' ? 'badge-red' : 'badge-yellow';
+    tbody.innerHTML += `<tr><td>${a.sku}</td><td>${a.product}</td><td><span class="badge ${badgeClass}">${a.status.replace('_',' ')}</span></td><td>${a.on_hand}</td><td>${a.reorder_pt}</td><td>${a.days_left.toFixed(1)}</td><td>${a.avg_daily.toFixed(2)}</td></tr>`;
+  });
+}
+
+// --- Dead Stock ---
+function renderDeadStock() {
+  const tiers = window.DATA.dead_stock_tiers[currentStore];
+  const detail = window.DATA.dead_stock_detail.filter(d => d.store === currentStore);
+  const el = document.getElementById('page-deadstock');
+  let metricsHtml = '<div class="metrics">';
+  const tierColors = { A: 'green', B: 'yellow', C: 'orange' };
+  tiers.forEach(t => {
+    metricsHtml += `<div class="metric-card ${tierColors[t.tier] || ''}"><div class="label">Tier ${t.tier}: ${t.label}</div><div class="value">${t.sku_count} SKUs</div><div class="sub">Capital: ${fmt(t.capital)}</div></div>`;
+  });
+  metricsHtml += '</div>';
+
+  el.innerHTML = `
+    ${metricsHtml}
+    ${detail.length > 0 ? `
+    <div class="chart-container"><h3>Capital at Risk by Category (Slow Movers)</h3><canvas id="deadCatChart"></canvas></div>
+    <div class="table-wrap"><h3>Slow Mover Detail</h3><table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Tier</th><th>Units 90d</th><th>Days No Sale</th><th>On Hand</th><th>Capital</th><th>Action</th></tr></thead><tbody id="deadTable"></tbody></table></div>
+    ` : '<div class="success-banner"><span class="icon">&#10003;</span><span class="text">No slow movers or dead stock detected for this store. All inventory is moving well.</span></div>'}
+  `;
+
+  if (detail.length > 0) {
+    // Group by category
+    const catMap = {};
+    detail.forEach(d => { catMap[d.category] = (catMap[d.category] || 0) + d.capital; });
+    const catLabels = Object.keys(catMap);
+    const catVals = Object.values(catMap);
+    charts.deadCat = new Chart(document.getElementById('deadCatChart'), {
+      type: 'bar',
+      data: { labels: catLabels, datasets: [{ label: 'Capital at Risk', data: catVals, backgroundColor: '#fd7e14' }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v } } } }
+    });
+    const tbody = document.getElementById('deadTable');
+    detail.forEach(d => {
+      tbody.innerHTML += `<tr><td>${d.sku}</td><td>${d.product}</td><td>${d.category}</td><td><span class="badge badge-orange">${d.tier}</span></td><td>${d.sold_90d}</td><td>${d.days_no_sale}</td><td>${d.on_hand}</td><td>${fmt(d.capital)}</td><td>${d.action}</td></tr>`;
+    });
+  }
+}
+
+// --- Demand Forecast ---
+function renderDemand() {
+  const signals = window.DATA.demand_signals[currentStore];
+  const events = window.DATA.demand_events;
+  const el = document.getElementById('page-demand');
+  el.innerHTML = `
+    <div class="metrics">
+      <div class="metric-card red"><div class="label">Order Now</div><div class="value">${signals.ORDER_NOW}</div></div>
+      <div class="metric-card yellow"><div class="label">Order Soon</div><div class="value">${signals.ORDER_SOON}</div></div>
+      <div class="metric-card green"><div class="label">Adequate</div><div class="value">${signals.ADEQUATE}</div></div>
+    </div>
+    ${signals.ORDER_NOW === 0 && signals.ORDER_SOON === 0 ? '<div class="success-banner"><span class="icon">&#10003;</span><span class="text">All SKUs have adequate inventory for upcoming demand. No immediate ordering action required.</span></div>' : ''}
+    <div class="table-wrap"><h3>Upcoming Demand Events</h3><table><thead><tr><th>Event</th><th>Date</th><th>Demand Multiplier</th><th>Affected Categories</th></tr></thead><tbody id="demandTable"></tbody></table></div>
+  `;
+  const tbody = document.getElementById('demandTable');
+  events.forEach(e => {
+    const mult = e.multiplier >= 1.7 ? 'badge-red' : e.multiplier >= 1.5 ? 'badge-orange' : 'badge-blue';
+    tbody.innerHTML += `<tr><td>${e.event}</td><td>${e.date}</td><td><span class="badge ${mult}">${e.multiplier}x</span></td><td>${e.categories}</td></tr>`;
+  });
+}
+
+// --- AI Recommender ---
+function renderRecommender() {
+  const el = document.getElementById('page-recommender');
+  el.innerHTML = `
+    <div class="chat-container">
+      <h3 style="margin-bottom:20px;color:#555;">AI Product Recommender</h3>
+      <div class="chat-bubble user"><div class="avatar">U</div><div class="msg">Birthday gift for a bourbon lover ($40-50)</div></div>
+      <div class="chat-bubble assistant"><div class="avatar">AI</div><div class="msg">Great choice! Here are my top bourbon picks in that range:<br><br><strong>1. Angel's Envy Bourbon 750ml ($49.99)</strong> - Port barrel-finished, smooth caramel and vanilla. Our #1 seller in premium bourbon.<br><br><strong>2. Woodford Reserve Double Oaked ($47.99)</strong> - Rich butterscotch and toasted oak. Excellent for sipping neat.<br><br><strong>3. Basil Hayden 750ml ($42.99)</strong> - Lighter, spicier profile. Great entry point to premium bourbon.<br><br>All three come in gift-worthy packaging. Want me to check current stock availability?</div></div>
+      <div class="chat-bubble user"><div class="avatar">U</div><div class="msg">Wine for a romantic Italian dinner</div></div>
+      <div class="chat-bubble assistant"><div class="avatar">AI</div><div class="msg">For an Italian dinner, I'd recommend wines that complement classic dishes:<br><br><strong>1. Chianti Classico Riserva ($28-35)</strong> - Perfect with pasta, red sauce, and grilled meats. Bright cherry and earthy notes.<br><br><strong>2. Barolo ($45-60)</strong> - The "King of Wines" - pairs beautifully with truffle dishes, risotto, or aged cheeses.<br><br><strong>3. Pinot Grigio from Alto Adige ($18-22)</strong> - Crisp and refreshing for seafood antipasti or lighter courses.<br><br>For a special occasion, I'd go with the Barolo - it's a statement wine. Shall I suggest a specific producer from our inventory?</div></div>
+      <div class="chat-bubble user"><div class="avatar">U</div><div class="msg">Something fun for a pool party this weekend, budget $100 total</div></div>
+      <div class="chat-bubble assistant"><div class="avatar">AI</div><div class="msg">Pool party essentials coming right up! Here's a crowd-pleasing spread for $100:<br><br><strong>1. Corona Extra 12pk ($16.99)</strong> - The classic poolside beer. Light and refreshing.<br><br><strong>2. Twisted Tea Original 12pk ($17.99)</strong> - Sweet tea meets party vibes. Always a hit.<br><br><strong>3. Tito's Vodka 1.75L ($32.99)</strong> - Versatile for mixed drinks. Pair with sodas and fresh fruit.<br><br><strong>4. Fever-Tree Tonic Water 4pk ($6.99)</strong> + <strong>Q Ginger Beer 4pk ($8.99)</strong> - Mixers for Moscow Mules and G&Ts.<br><br><strong>5. Topo Chico Mineral Water 12pk ($7.99)</strong> - For the designated drivers.<br><br><strong>Total: ~$92</strong> - Enough leftover for a bag of limes! Want me to add these to a cart?</div></div>
+    </div>
+  `;
+}
+
+// --- Distributor Scorecard ---
+function renderDistributor() {
+  const dists = window.DATA.distributors;
+  const detail = window.DATA.distributor_detail;
+  const storeDetail = detail.filter(d => d.store === currentStore);
+  const totalSpend = dists.reduce((s,d) => s + d.spend, 0);
+  const totalPOs = dists.reduce((s,d) => s + d.pos, 0);
+  const avgScore = (dists.reduce((s,d) => s + d.score, 0) / dists.length);
+  const el = document.getElementById('page-distributor');
+  el.innerHTML = `
+    <div class="metrics">
+      <div class="metric-card"><div class="label"># Distributors</div><div class="value">${dists.length}</div></div>
+      <div class="metric-card"><div class="label">Avg Score</div><div class="value">${avgScore.toFixed(1)}</div></div>
+      <div class="metric-card"><div class="label">Total Spend</div><div class="value">${fmt(totalSpend)}</div></div>
+      <div class="metric-card"><div class="label">Total POs</div><div class="value">${fmtInt(totalPOs)}</div></div>
+    </div>
+    <div class="chart-container"><h3>Composite Score by Distributor</h3><canvas id="distChart"></canvas></div>
+    <div class="table-wrap"><h3>Overall Scorecard</h3><table><thead><tr><th>Distributor</th><th>Fill Rate %</th><th>On-Time %</th><th>Accuracy %</th><th>Invoice Error %</th><th>Score</th><th>POs</th><th>Spend</th></tr></thead><tbody id="distTable"></tbody></table></div>
+    <div class="table-wrap"><h3>Per-Store Breakdown (${window.DATA.stores.find(s=>s.id===currentStore).name})</h3><table><thead><tr><th>Distributor</th><th>Fill %</th><th>On-Time %</th><th>Accuracy %</th><th>Inv Error %</th><th>Score</th><th>Tier</th><th>Spend</th></tr></thead><tbody id="distDetailTable"></tbody></table></div>
+  `;
+  // Chart
+  const sortedDists = [...dists].sort((a,b) => b.score - a.score);
+  charts.dist = new Chart(document.getElementById('distChart'), {
+    type: 'bar',
+    data: {
+      labels: sortedDists.map(d => d.name.length > 20 ? d.name.substring(0,20) + '...' : d.name),
+      datasets: [{ label: 'Score', data: sortedDists.map(d => d.score), backgroundColor: sortedDists.map(d => d.score >= 80 ? '#28a745' : d.score >= 75 ? '#ffc107' : '#dc3545') }]
+    },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { min: 70, max: 85 } } }
+  });
+  // Overall table
+  const tbody = document.getElementById('distTable');
+  dists.forEach(d => {
+    tbody.innerHTML += `<tr><td>${d.name}</td><td>${fmtPct(d.fill_rate)}</td><td>${fmtPct(d.on_time)}</td><td>${fmtPct(d.accuracy)}</td><td>${fmtPct(d.invoice_error)}</td><td><strong>${d.score.toFixed(1)}</strong></td><td>${d.pos}</td><td>${fmt(d.spend)}</td></tr>`;
+  });
+  // Store detail table
+  const dtbody = document.getElementById('distDetailTable');
+  storeDetail.sort((a,b) => b.score - a.score).forEach(d => {
+    dtbody.innerHTML += `<tr><td>${d.name}</td><td>${fmtPct(d.fill)}</td><td>${fmtPct(d.on_time)}</td><td>${fmtPct(d.accuracy)}</td><td>${fmtPct(d.inv_error)}</td><td><strong>${d.score.toFixed(1)}</strong></td><td><span class="badge badge-green">${d.tier}</span></td><td>${fmt(d.spend)}</td></tr>`;
+  });
+}
+
+// Tab event listeners
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchTab(tab.dataset.page));
+});
+
+// Initial render
+renderActivePage();
+</script>
+</body>
+</html>
