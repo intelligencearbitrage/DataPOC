@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Patel Motel AI & Analytics</title>
+<title>Patel Motel AI & Analytics Platform</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -70,7 +70,7 @@ table tr:hover { background: #f0f7ff; }
 <body>
 
 <div class="header">
-  <h1>Patel Motel AI & Analytics</h1>
+  <h1>Patel Motel AI & Analytics Platform</h1>
   <div class="summary-cards">
     <div class="summary-card"><div class="num">6</div><div class="lbl">Domain Apps</div></div>
     <div class="summary-card"><div class="num">20</div><div class="lbl">Features</div></div>
@@ -335,6 +335,18 @@ window.DATA = {
     "P009":[{"month":"2024-04","res":84,"adr":131.05},{"month":"2024-05","res":82,"adr":134.08},{"month":"2024-06","res":91,"adr":138.63},{"month":"2024-07","res":92,"adr":132.38},{"month":"2024-08","res":90,"adr":130.86},{"month":"2024-09","res":89,"adr":134.68},{"month":"2024-10","res":87,"adr":141.26},{"month":"2024-11","res":95,"adr":134.73},{"month":"2024-12","res":89,"adr":137.02},{"month":"2025-01","res":92,"adr":136.08},{"month":"2025-02","res":84,"adr":129.17},{"month":"2025-03","res":89,"adr":131.02},{"month":"2025-04","res":85,"adr":126.09},{"month":"2025-05","res":82,"adr":131.94},{"month":"2025-06","res":84,"adr":132.87},{"month":"2025-07","res":89,"adr":127.65},{"month":"2025-08","res":84,"adr":135.75},{"month":"2025-09","res":81,"adr":127.03},{"month":"2025-10","res":95,"adr":129.13},{"month":"2025-11","res":92,"adr":131.70},{"month":"2025-12","res":83,"adr":133.33},{"month":"2026-01","res":97,"adr":133.03},{"month":"2026-02","res":81,"adr":133.03},{"month":"2026-03","res":92,"adr":138.90},{"month":"2026-04","res":65,"adr":131.32}],
     "P010":[{"month":"2024-04","res":90,"adr":71.74},{"month":"2024-05","res":91,"adr":72.36},{"month":"2024-06","res":85,"adr":77.16},{"month":"2024-07","res":75,"adr":73.06},{"month":"2024-08","res":92,"adr":76.66},{"month":"2024-09","res":83,"adr":77.26},{"month":"2024-10","res":90,"adr":74.43},{"month":"2024-11","res":88,"adr":75.07},{"month":"2024-12","res":89,"adr":76.72},{"month":"2025-01","res":83,"adr":73.32},{"month":"2025-02","res":72,"adr":74.80},{"month":"2025-03","res":90,"adr":76.34},{"month":"2025-04","res":90,"adr":74.39},{"month":"2025-05","res":90,"adr":76.93},{"month":"2025-06","res":95,"adr":73.96},{"month":"2025-07","res":88,"adr":70.67},{"month":"2025-08","res":89,"adr":74.02},{"month":"2025-09","res":81,"adr":77.15},{"month":"2025-10","res":89,"adr":72.13},{"month":"2025-11","res":90,"adr":74.91},{"month":"2025-12","res":91,"adr":75.49},{"month":"2026-01","res":89,"adr":77.11},{"month":"2026-02","res":77,"adr":76.34},{"month":"2026-03","res":91,"adr":74.34},{"month":"2026-04","res":65,"adr":80.01}]
   },
+  "pricing_recs": {
+    "P001":[{"type":"DOUBLE","date":"Apr 18","rec":110.27,"current":79.99,"conf":0.89,"signal":"HIGH"},{"type":"DOUBLE","date":"Apr 23","rec":73.59,"current":79.99,"conf":0.84,"signal":"LOW"},{"type":"DOUBLE","date":"Apr 24","rec":118.26,"current":79.99,"conf":0.96,"signal":"HIGH"},{"type":"DOUBLE","date":"Apr 25","rec":98.56,"current":79.99,"conf":0.65,"signal":"HIGH"},{"type":"KING","date":"Apr 19","rec":89.59,"current":79.99,"conf":0.95,"signal":"LOW"},{"type":"KING","date":"Apr 21","rec":105.59,"current":79.99,"conf":0.99,"signal":"MEDIUM"},{"type":"KING","date":"Apr 22","rec":81.59,"current":79.99,"conf":0.66,"signal":"MEDIUM"},{"type":"KING","date":"Apr 23","rec":87.19,"current":79.99,"conf":0.71,"signal":"LOW"},{"type":"SUITE","date":"Apr 18","rec":129.79,"current":79.99,"conf":0.91,"signal":"HIGH"},{"type":"SUITE","date":"Apr 20","rec":79.99,"current":79.99,"conf":0.84,"signal":"HIGH"},{"type":"SUITE","date":"Apr 24","rec":94.96,"current":79.99,"conf":0.63,"signal":"HIGH"}],
+    "P002":[{"type":"DOUBLE","date":"Apr 18","rec":77.58,"current":59.99,"conf":0.9,"signal":"HIGH"},{"type":"DOUBLE","date":"Apr 21","rec":73.79,"current":59.99,"conf":0.64,"signal":"MEDIUM"},{"type":"DOUBLE","date":"Apr 22","rec":67.19,"current":59.99,"conf":0.77,"signal":"LOW"},{"type":"DOUBLE","date":"Apr 25","rec":86.36,"current":59.99,"conf":0.66,"signal":"HIGH"},{"type":"SUITE","date":"Apr 22","rec":62.39,"current":59.99,"conf":0.84,"signal":"LOW"}],
+    "P003":[{"type":"DOUBLE","date":"Apr 18","rec":106.37,"current":79.99,"conf":0.63,"signal":"HIGH"},{"type":"DOUBLE","date":"Apr 19","rec":104.79,"current":79.99,"conf":0.91,"signal":"MEDIUM"},{"type":"DOUBLE","date":"Apr 22","rec":69.59,"current":79.99,"conf":0.93,"signal":"LOW"},{"type":"DOUBLE","date":"Apr 25","rec":103.44,"current":79.99,"conf":0.73,"signal":"HIGH"},{"type":"KING","date":"Apr 18","rec":112.23,"current":79.99,"conf":0.66,"signal":"HIGH"},{"type":"KING","date":"Apr 25","rec":83.93,"current":79.99,"conf":0.71,"signal":"HIGH"},{"type":"SUITE","date":"Apr 22","rec":101.59,"current":79.99,"conf":0.97,"signal":"LOW"},{"type":"SUITE","date":"Apr 25","rec":100.52,"current":79.99,"conf":0.62,"signal":"HIGH"}],
+    "P004":[{"type":"DOUBLE","date":"Apr 19","rec":88.99,"current":99.99,"conf":0.64,"signal":"LOW"},{"type":"DOUBLE","date":"Apr 21","rec":121.99,"current":99.99,"conf":0.72,"signal":"LOW"},{"type":"DOUBLE","date":"Apr 25","rec":115.89,"current":99.99,"conf":0.67,"signal":"HIGH"},{"type":"KING","date":"Apr 22","rec":98.99,"current":99.99,"conf":0.75,"signal":"MEDIUM"},{"type":"KING","date":"Apr 23","rec":134.99,"current":99.99,"conf":0.67,"signal":"MEDIUM"},{"type":"KING","date":"Apr 24","rec":131.03,"current":99.99,"conf":0.83,"signal":"HIGH"},{"type":"SUITE","date":"Apr 19","rec":132.99,"current":99.99,"conf":0.77,"signal":"LOW"},{"type":"SUITE","date":"Apr 25","rec":114.67,"current":99.99,"conf":0.66,"signal":"HIGH"}],
+    "P005":[{"type":"DOUBLE","date":"Apr 20","rec":62.99,"current":59.99,"conf":0.74,"signal":"MEDIUM"},{"type":"DOUBLE","date":"Apr 22","rec":52.79,"current":59.99,"conf":0.81,"signal":"MEDIUM"},{"type":"KING","date":"Apr 18","rec":67.33,"current":59.99,"conf":0.6,"signal":"HIGH"},{"type":"KING","date":"Apr 21","rec":50.99,"current":59.99,"conf":0.78,"signal":"MEDIUM"},{"type":"KING","date":"Apr 25","rec":74.65,"current":59.99,"conf":0.74,"signal":"HIGH"},{"type":"SUITE","date":"Apr 18","rec":73.92,"current":59.99,"conf":0.79,"signal":"HIGH"},{"type":"SUITE","date":"Apr 23","rec":58.79,"current":59.99,"conf":0.86,"signal":"LOW"},{"type":"SUITE","date":"Apr 25","rec":64.41,"current":59.99,"conf":0.62,"signal":"HIGH"}],
+    "P006":[{"type":"DOUBLE","date":"Apr 18","rec":83.43,"current":59.99,"conf":0.7,"signal":"HIGH"},{"type":"DOUBLE","date":"Apr 20","rec":58.79,"current":59.99,"conf":0.98,"signal":"LOW"},{"type":"DOUBLE","date":"Apr 22","rec":71.99,"current":59.99,"conf":0.9,"signal":"MEDIUM"},{"type":"DOUBLE","date":"Apr 25","rec":68.06,"current":59.99,"conf":0.83,"signal":"HIGH"},{"type":"KING","date":"Apr 18","rec":62.21,"current":59.99,"conf":0.99,"signal":"HIGH"},{"type":"KING","date":"Apr 23","rec":58.19,"current":59.99,"conf":0.82,"signal":"MEDIUM"},{"type":"SUITE","date":"Apr 24","rec":83.99,"current":59.99,"conf":0.6,"signal":"HIGH"},{"type":"SUITE","date":"Apr 25","rec":79.77,"current":59.99,"conf":0.66,"signal":"HIGH"}],
+    "P007":[{"type":"DOUBLE","date":"Apr 25","rec":131.74,"current":79.99,"conf":0.98,"signal":"HIGH"},{"type":"KING","date":"Apr 22","rec":74.39,"current":79.99,"conf":0.8,"signal":"LOW"},{"type":"KING","date":"Apr 24","rec":101.24,"current":79.99,"conf":0.89,"signal":"HIGH"},{"type":"SUITE","date":"Apr 18","rec":79.05,"current":79.99,"conf":0.72,"signal":"HIGH"},{"type":"SUITE","date":"Apr 23","rec":95.19,"current":79.99,"conf":0.88,"signal":"LOW"},{"type":"SUITE","date":"Apr 24","rec":102.13,"current":79.99,"conf":0.83,"signal":"HIGH"},{"type":"SUITE","date":"Apr 25","rec":97.59,"current":79.99,"conf":0.83,"signal":"HIGH"}],
+    "P008":[{"type":"KING","date":"Apr 19","rec":79.19,"current":79.99,"conf":0.83,"signal":"LOW"},{"type":"KING","date":"Apr 23","rec":95.99,"current":79.99,"conf":0.88,"signal":"MEDIUM"},{"type":"KING","date":"Apr 25","rec":81.97,"current":79.99,"conf":0.78,"signal":"HIGH"},{"type":"SUITE","date":"Apr 19","rec":102.39,"current":79.99,"conf":0.69,"signal":"LOW"},{"type":"SUITE","date":"Apr 23","rec":83.19,"current":79.99,"conf":0.97,"signal":"MEDIUM"},{"type":"SUITE","date":"Apr 25","rec":122.96,"current":79.99,"conf":0.6,"signal":"HIGH"}],
+    "P009":[{"type":"DOUBLE","date":"Apr 18","rec":143.95,"current":99.99,"conf":0.84,"signal":"HIGH"},{"type":"DOUBLE","date":"Apr 19","rec":105.99,"current":99.99,"conf":0.7,"signal":"LOW"},{"type":"DOUBLE","date":"Apr 21","rec":128.99,"current":99.99,"conf":0.95,"signal":"MEDIUM"},{"type":"DOUBLE","date":"Apr 23","rec":112.99,"current":99.99,"conf":0.68,"signal":"HIGH"},{"type":"KING","date":"Apr 20","rec":135.99,"current":99.99,"conf":0.75,"signal":"HIGH"},{"type":"KING","date":"Apr 22","rec":94.99,"current":99.99,"conf":0.86,"signal":"MEDIUM"},{"type":"SUITE","date":"Apr 19","rec":82.99,"current":99.99,"conf":0.68,"signal":"LOW"},{"type":"SUITE","date":"Apr 21","rec":115.99,"current":99.99,"conf":0.88,"signal":"MEDIUM"}],
+    "P010":[{"type":"DOUBLE","date":"Apr 18","rec":95.14,"current":59.99,"conf":0.98,"signal":"HIGH"},{"type":"DOUBLE","date":"Apr 21","rec":54.59,"current":59.99,"conf":0.77,"signal":"MEDIUM"},{"type":"DOUBLE","date":"Apr 22","rec":83.39,"current":59.99,"conf":0.78,"signal":"MEDIUM"},{"type":"DOUBLE","date":"Apr 25","rec":92.95,"current":59.99,"conf":0.67,"signal":"HIGH"},{"type":"KING","date":"Apr 18","rec":65.87,"current":59.99,"conf":0.72,"signal":"HIGH"},{"type":"KING","date":"Apr 19","rec":65.99,"current":59.99,"conf":0.7,"signal":"MEDIUM"},{"type":"KING","date":"Apr 24","rec":65.85,"current":59.99,"conf":0.62,"signal":"HIGH"},{"type":"SUITE","date":"Apr 18","rec":101.73,"current":59.99,"conf":0.7,"signal":"HIGH"},{"type":"SUITE","date":"Apr 21","rec":48.59,"current":59.99,"conf":0.85,"signal":"MEDIUM"},{"type":"SUITE","date":"Apr 22","rec":74.39,"current":59.99,"conf":0.82,"signal":"MEDIUM"},{"type":"SUITE","date":"Apr 25","rec":73.19,"current":59.99,"conf":0.66,"signal":"HIGH"}]
+  },
   "room_energy": {
     "P001":[{"room":"0114","type":"DOUBLE","kwh":105},{"room":"0402","type":"DOUBLE","kwh":93.5},{"room":"0204","type":"KING","kwh":87.1},{"room":"0202","type":"DOUBLE","kwh":86.4},{"room":"0113","type":"DOUBLE","kwh":82.1},{"room":"0211","type":"DOUBLE","kwh":77.1},{"room":"0209","type":"DOUBLE","kwh":72.1},{"room":"0101","type":"DOUBLE","kwh":65},{"room":"0203","type":"DOUBLE","kwh":63.5},{"room":"0111","type":"DOUBLE","kwh":62.8}],
     "P002":[{"room":"0303","type":"DOUBLE","kwh":76.2},{"room":"0212","type":"DOUBLE","kwh":75},{"room":"0217","type":"DOUBLE","kwh":74.4},{"room":"0220","type":"SUITE","kwh":73.2},{"room":"0216","type":"KING","kwh":69},{"room":"0307","type":"DOUBLE","kwh":66},{"room":"0214","type":"DOUBLE","kwh":63.1},{"room":"0302","type":"KING","kwh":60.1},{"room":"0215","type":"DOUBLE_QUEEN","kwh":59.5},{"room":"0219","type":"KING","kwh":56.5}],
@@ -542,12 +554,43 @@ function renderF03(container) {
 }
 
 function renderF04(container) {
+  const data = window.DATA.pricing_recs[currentProperty];
+  const highDemand = data.filter(d => d.signal === 'HIGH');
+  const avgRec = data.reduce((s,d) => s + d.rec, 0) / data.length;
+  const avgCurrent = data[0] ? data[0].current : 0;
+  const avgUplift = ((avgRec - avgCurrent) / avgCurrent * 100).toFixed(1);
+
+  const signalColors = {'HIGH':'#dc3545','MEDIUM':'#fd7e14','LOW':'#28a745'};
+
   container.innerHTML = `
-    <div class="placeholder-panel">
-      <h3>Dynamic Pricing Engine</h3>
-      <p>The AI-powered dynamic pricing module analyzes demand patterns, competitor rates, local events, and historical occupancy to generate real-time pricing recommendations. It considers day-of-week patterns, seasonality, booking lead time, and channel-specific optimization to maximize RevPAR while maintaining competitive positioning.</p>
-      <p style="margin-top:12px;color:#888;">Features include: rate recommendations by room type, minimum stay requirements, last-minute discounts, advance purchase rates, and competitor rate monitoring.</p>
+    <h2 style="margin-bottom:8px">Dynamic Pricing Engine</h2>
+    <p style="color:#666;margin-bottom:20px;font-size:13px">AI rate recommendations by room type based on demand signals, competitor rates, and occupancy forecasts</p>
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${data.length}</div><div class="label">Rate Recommendations</div></div>
+      <div class="metric-card"><div class="value">$${avgRec.toFixed(0)}</div><div class="label">Avg Recommended Rate</div></div>
+      <div class="metric-card"><div class="value">$${avgCurrent.toFixed(0)}</div><div class="label">Current Rate</div></div>
+      <div class="metric-card"><div class="value" style="color:${avgUplift > 0 ? '#28a745' : '#dc3545'}">${avgUplift > 0 ? '+' : ''}${avgUplift}%</div><div class="label">Avg Rate Change</div></div>
+    </div>
+    <div class="chart-container"><h3>Recommended vs Current Rate</h3><div class="chart-wrap"><canvas id="chartF04"></canvas></div></div>
+    <div class="table-wrap"><h3>Rate Recommendations (Last 7 Days)</h3>
+      <table><thead><tr><th>Date</th><th>Room Type</th><th>Current</th><th>Recommended</th><th>Change</th><th>Confidence</th><th>Demand Signal</th></tr></thead>
+      <tbody>${data.map(d => {
+        const change = ((d.rec - d.current) / d.current * 100).toFixed(1);
+        return `<tr><td>${d.date}</td><td>${d.type}</td><td>$${d.current.toFixed(2)}</td><td>$${d.rec.toFixed(2)}</td><td style="color:${change > 0 ? '#28a745' : '#dc3545'};font-weight:600">${change > 0 ? '+' : ''}${change}%</td><td>${(d.conf*100).toFixed(0)}%</td><td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;color:white;background:${signalColors[d.signal]||'#999'}">${d.signal}</span></td></tr>`;
+      }).join('')}</tbody></table>
     </div>`;
+
+  charts.f04 = new Chart(document.getElementById('chartF04'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.date + ' ' + d.type),
+      datasets: [
+        { label: 'Recommended', data: data.map(d => d.rec), backgroundColor: 'rgba(31,119,180,0.7)', borderRadius: 3 },
+        { label: 'Current', data: data.map(d => d.current), backgroundColor: 'rgba(200,200,200,0.5)', borderRadius: 3 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, title: { display: true, text: 'Rate ($)' } } }, plugins: { legend: { position: 'top' } } }
+  });
 }
 
 function renderF05(container) {
