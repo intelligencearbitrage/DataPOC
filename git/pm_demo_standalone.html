@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM AI Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; }
+.header { background: #1f77b4; color: white; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.header h1 { font-size: 24px; font-weight: 600; }
+.summary-cards { display: flex; gap: 16px; flex-wrap: wrap; }
+.summary-card { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 12px 20px; text-align: center; min-width: 120px; }
+.summary-card .num { font-size: 28px; font-weight: 700; }
+.summary-card .lbl { font-size: 11px; text-transform: uppercase; opacity: 0.85; }
+.controls { padding: 16px 32px; background: white; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 16px; }
+.controls label { font-weight: 600; font-size: 14px; }
+.controls select { padding: 8px 16px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; min-width: 280px; }
+.domain-tabs { display: flex; background: white; border-bottom: 2px solid #e0e0e0; padding: 0 32px; overflow-x: auto; }
+.domain-tab { padding: 14px 20px; cursor: pointer; font-size: 13px; font-weight: 500; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; }
+.domain-tab:hover { background: #f0f4f8; }
+.domain-tab.active { border-bottom-color: #1f77b4; color: #1f77b4; font-weight: 600; }
+.feature-tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; padding: 0 32px; overflow-x: auto; }
+.feature-tab { padding: 10px 16px; cursor: pointer; font-size: 12px; font-weight: 500; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; color: #666; }
+.feature-tab:hover { color: #333; background: #eef2f6; }
+.feature-tab.active { border-bottom-color: #1f77b4; color: #1f77b4; }
+.content { padding: 24px 32px; max-width: 1400px; }
+.domain-panel { display: none; }
+.domain-panel.active { display: block; }
+.feature-panel { display: none; }
+.feature-panel.active { display: block; }
+.metric-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.metric-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
+.metric-card .value { font-size: 28px; font-weight: 700; color: #1f77b4; }
+.metric-card .label { font-size: 12px; color: #888; text-transform: uppercase; margin-top: 4px; }
+.chart-container { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; }
+.chart-container h3 { margin-bottom: 16px; font-size: 16px; color: #333; }
+.chart-wrap { position: relative; height: 300px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table th { background: #f0f4f8; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; position: sticky; top: 0; }
+table td { padding: 9px 12px; border-bottom: 1px solid #eee; }
+table tr:nth-child(even) { background: #fafbfc; }
+table tr:hover { background: #f0f7ff; }
+.table-wrap { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; overflow-x: auto; }
+.table-wrap h3 { margin-bottom: 12px; font-size: 16px; }
+.placeholder-panel { background: white; border-radius: 10px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
+.placeholder-panel h3 { color: #1f77b4; margin-bottom: 12px; }
+.placeholder-panel p { color: #666; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+.status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.status-current { background: #d4edda; color: #155724; }
+.status-due { background: #fff3cd; color: #856404; }
+.status-overdue { background: #f8d7da; color: #721c24; }
+.calculator { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.calculator h3 { margin-bottom: 20px; }
+.calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.calc-inputs { display: flex; flex-direction: column; gap: 16px; }
+.calc-inputs label { font-size: 13px; font-weight: 500; display: flex; flex-direction: column; gap: 4px; }
+.calc-inputs input[type="range"] { width: 100%; }
+.calc-results { display: flex; flex-direction: column; gap: 12px; }
+.calc-result-card { padding: 16px; border-radius: 8px; text-align: center; }
+.calc-result-card.independent { background: #e8f4fd; border: 1px solid #b8dff5; }
+.calc-result-card.franchise { background: #fff8e1; border: 1px solid #ffe082; }
+.calc-result-card .val { font-size: 24px; font-weight: 700; }
+.calc-result-card .lbl { font-size: 12px; color: #666; margin-top: 4px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .calc-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>PM AI Platform</h1>
+  <div class="summary-cards">
+    <div class="summary-card"><div class="num">6</div><div class="lbl">Domain Apps</div></div>
+    <div class="summary-card"><div class="num">20</div><div class="lbl">Features</div></div>
+    <div class="summary-card"><div class="num">10</div><div class="lbl">Properties</div></div>
+    <div class="summary-card"><div class="num">35</div><div class="lbl">Data Tables</div></div>
+  </div>
+</div>
+
+<div class="controls">
+  <label for="propSelect">Property:</label>
+  <select id="propSelect"></select>
+</div>
+
+<div class="domain-tabs" id="domainTabs"></div>
+<div class="feature-tabs" id="featureTabs"></div>
+
+<div class="content" id="mainContent"></div>
+
+<script>
+window.DATA = {
+  "properties": [
+    {"id":"P001","name":"Sunshine Inn & Suites","city":"Houston","state":"TX","rooms":62,"class":"ECONOMY","franchise":"N"},
+    {"id":"P002","name":"Peachtree Lodge","city":"Norcross","state":"GA","rooms":48,"class":"BUDGET","franchise":"N"},
+    {"id":"P003","name":"Gulf Breeze Motor Inn","city":"Clearwater","state":"FL","rooms":76,"class":"ECONOMY","franchise":"Y"},
+    {"id":"P004","name":"Garden State Rest Stop","city":"Parsippany","state":"NJ","rooms":54,"class":"MIDSCALE","franchise":"Y"},
+    {"id":"P005","name":"Pacific Motor Lodge","city":"North Hills","state":"CA","rooms":42,"class":"BUDGET","franchise":"N"},
+    {"id":"P006","name":"Lone Star Budget Inn","city":"San Antonio","state":"TX","rooms":80,"class":"BUDGET","franchise":"N"},
+    {"id":"P007","name":"Magnolia Court Inn","city":"Duluth","state":"GA","rooms":36,"class":"ECONOMY","franchise":"N"},
+    {"id":"P008","name":"Sunshine Coast Motel","city":"St Pete Beach","state":"FL","rooms":44,"class":"ECONOMY","franchise":"N"},
+    {"id":"P009","name":"Turnpike Travel Inn","city":"Hasbrouck Heights","state":"NJ","rooms":68,"class":"MIDSCALE","franchise":"Y"},
+    {"id":"P010","name":"Valley Vista Motor Hotel","city":"Panorama City","state":"CA","rooms":58,"class":"BUDGET","franchise":"N"}
+  ],
+  "channel_mix": {
+    "P001": [{"channel":"Expedia","count":387,"avg_rev":103.95},{"channel":"Direct-Phone","count":377,"avg_rev":106.43},{"channel":"Booking.com","count":370,"avg_rev":103.29},{"channel":"Direct-Website","count":369,"avg_rev":105.95},{"channel":"Google Hotels","count":340,"avg_rev":102.67},{"channel":"Walk-in","count":333,"avg_rev":104.56}],
+    "P002": [{"channel":"Direct-Phone","count":314,"avg_rev":74.44},{"channel":"Expedia","count":288,"avg_rev":74.88},{"channel":"Direct-Website","count":281,"avg_rev":74.54},{"channel":"Booking.com","count":259,"avg_rev":75.60},{"channel":"Google Hotels","count":247,"avg_rev":76.05},{"channel":"Walk-in","count":241,"avg_rev":75.13}],
+    "P003": [{"channel":"Expedia","count":482,"avg_rev":103.28},{"channel":"Google Hotels","count":476,"avg_rev":104.51},{"channel":"Booking.com","count":476,"avg_rev":106.10},{"channel":"Direct-Phone","count":438,"avg_rev":103.02},{"channel":"Direct-Website","count":438,"avg_rev":103.70},{"channel":"Walk-in","count":396,"avg_rev":103.81}],
+    "P004": [{"channel":"Expedia","count":290,"avg_rev":131.57},{"channel":"Direct-Website","count":287,"avg_rev":130.46},{"channel":"Booking.com","count":284,"avg_rev":133.29},{"channel":"Google Hotels","count":273,"avg_rev":135.35},{"channel":"Direct-Phone","count":240,"avg_rev":135.86},{"channel":"Walk-in","count":223,"avg_rev":134.84}],
+    "P005": [{"channel":"Expedia","count":197,"avg_rev":73.88},{"channel":"Direct-Phone","count":186,"avg_rev":75.48},{"channel":"Booking.com","count":182,"avg_rev":69.97},{"channel":"Google Hotels","count":181,"avg_rev":75.32},{"channel":"Direct-Website","count":172,"avg_rev":75.49},{"channel":"Walk-in","count":167,"avg_rev":74.45}],
+    "P006": [{"channel":"Google Hotels","count":482,"avg_rev":74.45},{"channel":"Booking.com","count":447,"avg_rev":75.29},{"channel":"Direct-Phone","count":445,"avg_rev":73.16},{"channel":"Expedia","count":432,"avg_rev":75.34},{"channel":"Direct-Website","count":417,"avg_rev":74.93},{"channel":"Walk-in","count":411,"avg_rev":74.19}],
+    "P007": [{"channel":"Expedia","count":205,"avg_rev":105.08},{"channel":"Booking.com","count":198,"avg_rev":105.82},{"channel":"Direct-Website","count":189,"avg_rev":103.88},{"channel":"Google Hotels","count":177,"avg_rev":104.29},{"channel":"Direct-Phone","count":163,"avg_rev":107.24},{"channel":"Walk-in","count":149,"avg_rev":100.88}],
+    "P008": [{"channel":"Direct-Website","count":299,"avg_rev":100.52},{"channel":"Direct-Phone","count":297,"avg_rev":104.81},{"channel":"Booking.com","count":277,"avg_rev":105.36},{"channel":"Expedia","count":277,"avg_rev":105.62},{"channel":"Google Hotels","count":250,"avg_rev":107.84},{"channel":"Walk-in","count":224,"avg_rev":101.42}],
+    "P009": [{"channel":"Booking.com","count":392,"avg_rev":134.83},{"channel":"Direct-Website","count":381,"avg_rev":132.53},{"channel":"Direct-Phone","count":367,"avg_rev":133.42},{"channel":"Expedia","count":357,"avg_rev":133.54},{"channel":"Google Hotels","count":346,"avg_rev":130.72},{"channel":"Walk-in","count":331,"avg_rev":132.50}],
+    "P010": [{"channel":"Direct-Phone","count":395,"avg_rev":73.16},{"channel":"Google Hotels","count":377,"avg_rev":76.51},{"channel":"Booking.com","count":355,"avg_rev":76.16},{"channel":"Expedia","count":354,"avg_rev":75.95},{"channel":"Direct-Website","count":338,"avg_rev":74.79},{"channel":"Walk-in","count":334,"avg_rev":73.39}]
+  },
+  "housekeeping": {
+    "P001": [{"status":"COMPLETED","cnt":1571},{"status":"IN_PROGRESS","cnt":147},{"status":"INSPECT","cnt":97},{"status":"PENDING","cnt":58}],
+    "P002": [{"status":"COMPLETED","cnt":1175},{"status":"IN_PROGRESS","cnt":105},{"status":"PENDING","cnt":62},{"status":"INSPECT","cnt":56}],
+    "P003": [{"status":"COMPLETED","cnt":2058},{"status":"IN_PROGRESS","cnt":136},{"status":"INSPECT","cnt":92},{"status":"PENDING","cnt":84}],
+    "P004": [{"status":"COMPLETED","cnt":1144},{"status":"IN_PROGRESS","cnt":109},{"status":"INSPECT","cnt":66},{"status":"PENDING","cnt":62}],
+    "P005": [{"status":"COMPLETED","cnt":846},{"status":"IN_PROGRESS","cnt":69},{"status":"INSPECT","cnt":30},{"status":"PENDING","cnt":26}],
+    "P006": [{"status":"COMPLETED","cnt":1947},{"status":"IN_PROGRESS","cnt":156},{"status":"INSPECT","cnt":110},{"status":"PENDING","cnt":101}],
+    "P007": [{"status":"COMPLETED","cnt":789},{"status":"IN_PROGRESS","cnt":75},{"status":"INSPECT","cnt":36},{"status":"PENDING","cnt":35}],
+    "P008": [{"status":"COMPLETED","cnt":1181},{"status":"IN_PROGRESS","cnt":108},{"status":"PENDING","cnt":60},{"status":"INSPECT","cnt":50}],
+    "P009": [{"status":"COMPLETED","cnt":1587},{"status":"IN_PROGRESS","cnt":129},{"status":"PENDING","cnt":77},{"status":"INSPECT","cnt":64}],
+    "P010": [{"status":"COMPLETED","cnt":1607},{"status":"IN_PROGRESS","cnt":142},{"status":"PENDING","cnt":73},{"status":"INSPECT","cnt":67}]
+  },
+  "revenue_by_channel": {
+    "P001": [{"channel":"Expedia","bookings":387,"gross":40229.46,"fees":7308.18,"net":29104.49},{"channel":"Direct-Phone","bookings":377,"gross":40122.97,"fees":0,"net":35491.80},{"channel":"Direct-Website","bookings":369,"gross":39094.22,"fees":0,"net":33162.57},{"channel":"Booking.com","bookings":370,"gross":38216.38,"fees":6032.47,"net":28320.51},{"channel":"Google Hotels","bookings":340,"gross":34908.76,"fees":4228.23,"net":25727.52},{"channel":"Walk-in","bookings":333,"gross":34819.31,"fees":0,"net":30747.81}],
+    "P002": [{"channel":"Direct-Phone","bookings":314,"gross":23373.03,"fees":0,"net":20282.01},{"channel":"Expedia","bookings":288,"gross":21566.11,"fees":3913.44,"net":15031.39},{"channel":"Direct-Website","bookings":281,"gross":20945.58,"fees":0,"net":17915.67},{"channel":"Booking.com","bookings":259,"gross":19581.63,"fees":3085.90,"net":14496.61},{"channel":"Google Hotels","bookings":247,"gross":18783.21,"fees":2284.95,"net":13858.16},{"channel":"Walk-in","bookings":241,"gross":18105.94,"fees":0,"net":16150.13}],
+    "P003": [{"channel":"Booking.com","bookings":476,"gross":50505.55,"fees":7958.71,"net":37670.24},{"channel":"Expedia","bookings":482,"gross":49781.70,"fees":9035.60,"net":35127.05},{"channel":"Google Hotels","bookings":476,"gross":49748.62,"fees":6044.46,"net":38970.53},{"channel":"Direct-Website","bookings":438,"gross":45419.11,"fees":0,"net":38979.94},{"channel":"Direct-Phone","bookings":438,"gross":45123.82,"fees":0,"net":40263.94},{"channel":"Walk-in","bookings":396,"gross":41109.40,"fees":0,"net":38157.91}],
+    "P004": [{"channel":"Expedia","bookings":290,"gross":38153.85,"fees":6923.56,"net":26614.52},{"channel":"Booking.com","bookings":284,"gross":37855.68,"fees":6002.86,"net":27667.20},{"channel":"Direct-Website","bookings":287,"gross":37442.17,"fees":0,"net":32706.29},{"channel":"Google Hotels","bookings":273,"gross":36951.17,"fees":4469.73,"net":28431.41},{"channel":"Direct-Phone","bookings":240,"gross":32607.50,"fees":0,"net":29298.14},{"channel":"Walk-in","bookings":223,"gross":30069.76,"fees":0,"net":27767.79}],
+    "P005": [{"channel":"Expedia","bookings":197,"gross":14555.24,"fees":2641.19,"net":10730.93},{"channel":"Direct-Phone","bookings":186,"gross":14039.69,"fees":0,"net":12300.91},{"channel":"Google Hotels","bookings":181,"gross":13632.12,"fees":1656.28,"net":10680.17},{"channel":"Direct-Website","bookings":172,"gross":12984.14,"fees":0,"net":11466.52},{"channel":"Booking.com","bookings":182,"gross":12734.85,"fees":2005.56,"net":9339.75},{"channel":"Walk-in","bookings":167,"gross":12433.85,"fees":0,"net":11674.40}],
+    "P006": [{"channel":"Google Hotels","bookings":482,"gross":35887.02,"fees":4356.56,"net":27730.76},{"channel":"Booking.com","bookings":447,"gross":33655.50,"fees":5313.26,"net":24242.04},{"channel":"Direct-Phone","bookings":445,"gross":32556.33,"fees":0,"net":29188.95},{"channel":"Expedia","bookings":432,"gross":32546.29,"fees":5900.95,"net":22769.81},{"channel":"Direct-Website","bookings":417,"gross":31247.51,"fees":0,"net":26910.27},{"channel":"Walk-in","bookings":411,"gross":30491.11,"fees":0,"net":27544.34}],
+    "P007": [{"channel":"Expedia","bookings":205,"gross":21541.67,"fees":3913.02,"net":15250.88},{"channel":"Booking.com","bookings":198,"gross":20951.91,"fees":3324.80,"net":15851.07},{"channel":"Direct-Website","bookings":189,"gross":19633.66,"fees":0,"net":17265.27},{"channel":"Google Hotels","bookings":177,"gross":18459.28,"fees":2245.19,"net":13524.76},{"channel":"Direct-Phone","bookings":163,"gross":17480.66,"fees":0,"net":15180.29},{"channel":"Walk-in","bookings":149,"gross":15031.20,"fees":0,"net":13131.17}],
+    "P008": [{"channel":"Direct-Phone","bookings":297,"gross":31128.99,"fees":0,"net":27942.74},{"channel":"Direct-Website","bookings":299,"gross":30054.68,"fees":0,"net":26381.80},{"channel":"Expedia","bookings":277,"gross":29256.22,"fees":5298.09,"net":20046.61},{"channel":"Booking.com","bookings":277,"gross":29186.02,"fees":4600.14,"net":21698.19},{"channel":"Google Hotels","bookings":250,"gross":26960.59,"fees":3273.91,"net":20060.89},{"channel":"Walk-in","bookings":224,"gross":22718.12,"fees":0,"net":20709.70}],
+    "P009": [{"channel":"Booking.com","bookings":392,"gross":52853.36,"fees":8361.36,"net":38366.23},{"channel":"Direct-Website","bookings":381,"gross":50493.69,"fees":0,"net":44618.20},{"channel":"Direct-Phone","bookings":367,"gross":48963.82,"fees":0,"net":43409.62},{"channel":"Expedia","bookings":357,"gross":47672.08,"fees":8650.83,"net":33148.78},{"channel":"Google Hotels","bookings":346,"gross":45229.68,"fees":5501.46,"net":34457.38},{"channel":"Walk-in","bookings":331,"gross":43856.52,"fees":0,"net":38280.51}],
+    "P010": [{"channel":"Direct-Phone","bookings":395,"gross":28898.13,"fees":0,"net":25508.13},{"channel":"Google Hotels","bookings":377,"gross":28845.98,"fees":3511.55,"net":22598.70},{"channel":"Booking.com","bookings":355,"gross":27036.70,"fees":4259.01,"net":19583.81},{"channel":"Expedia","bookings":354,"gross":26886.12,"fees":4884.23,"net":18969.20},{"channel":"Direct-Website","bookings":338,"gross":25279.85,"fees":0,"net":21550.70},{"channel":"Walk-in","bookings":334,"gross":24511.93,"fees":0,"net":22517.43}]
+  },
+  "direct_booking_pct": {
+    "P001": [{"month":"2024-04","pct":28.9},{"month":"2024-05","pct":36.2},{"month":"2024-06","pct":27.6},{"month":"2024-07","pct":36.4},{"month":"2024-08","pct":26.7},{"month":"2024-09","pct":29.7},{"month":"2024-10","pct":34.9},{"month":"2024-11","pct":37.4},{"month":"2024-12","pct":38.8},{"month":"2025-01","pct":30.6},{"month":"2025-02","pct":36.4},{"month":"2025-03","pct":31.5},{"month":"2025-06","pct":39.7},{"month":"2025-10","pct":38.9},{"month":"2025-11","pct":45.6},{"month":"2025-12","pct":38.3},{"month":"2026-03","pct":41.3},{"month":"2026-04","pct":46.4}],
+    "P002": [{"month":"2024-04","pct":39.7},{"month":"2024-05","pct":44.8},{"month":"2024-10","pct":45.7},{"month":"2025-04","pct":43.1},{"month":"2025-08","pct":41.0},{"month":"2026-02","pct":41.0},{"month":"2026-04","pct":44.0}],
+    "P003": [{"month":"2024-04","pct":28.4},{"month":"2025-05","pct":40.7},{"month":"2025-06","pct":35.8},{"month":"2026-04","pct":35.4}],
+    "P004": [{"month":"2024-05","pct":40.0},{"month":"2025-07","pct":38.5},{"month":"2025-11","pct":43.1},{"month":"2026-01","pct":38.1}],
+    "P005": [{"month":"2024-04","pct":42.6},{"month":"2024-05","pct":48.8},{"month":"2024-12","pct":42.0},{"month":"2025-03","pct":40.5},{"month":"2025-09","pct":40.0}],
+    "P006": [{"month":"2025-02","pct":40.6},{"month":"2026-04","pct":28.9}],
+    "P007": [{"month":"2024-05","pct":41.7},{"month":"2024-06","pct":41.5},{"month":"2024-09","pct":43.2},{"month":"2025-08","pct":44.2},{"month":"2026-04","pct":53.3}],
+    "P008": [{"month":"2024-03","pct":40.6},{"month":"2024-05","pct":43.3},{"month":"2024-10","pct":45.9},{"month":"2025-03","pct":46.3},{"month":"2025-09","pct":46.9},{"month":"2026-02","pct":42.9},{"month":"2026-04","pct":47.6}],
+    "P009": [{"month":"2024-11","pct":44.8},{"month":"2024-12","pct":43.5},{"month":"2026-01","pct":42.7}],
+    "P010": [{"month":"2024-07","pct":42.0},{"month":"2025-02","pct":40.0},{"month":"2025-07","pct":41.4},{"month":"2025-10","pct":45.1}]
+  },
+  "expenses": {
+    "P001": [{"category":"PAYROLL","spend":473910.60},{"category":"UTILITIES","spend":118871.10},{"category":"TAXES","spend":106862.10},{"category":"SUPPLIES","spend":89399.04},{"category":"INSURANCE","spend":70233.20},{"category":"MAINTENANCE","spend":63350.75},{"category":"MARKETING","spend":41814.12},{"category":"TECHNOLOGY","spend":22852.80}],
+    "P002": [{"category":"PAYROLL","spend":452920.00},{"category":"TAXES","spend":96153.60},{"category":"UTILITIES","spend":92947.00},{"category":"INSURANCE","spend":63667.20},{"category":"SUPPLIES","spend":61730.88},{"category":"MAINTENANCE","spend":44606.79},{"category":"MARKETING","spend":41075.89},{"category":"TECHNOLOGY","spend":19425.90}],
+    "P003": [{"category":"PAYROLL","spend":492160.60},{"category":"UTILITIES","spend":144324.22},{"category":"TAXES","spend":116532.00},{"category":"SUPPLIES","spend":90370.84},{"category":"INSURANCE","spend":77578.80},{"category":"MAINTENANCE","spend":60666.48},{"category":"MARKETING","spend":42910.00},{"category":"TECHNOLOGY","spend":26378.10}],
+    "P004": [{"category":"PAYROLL","spend":460760.80},{"category":"UTILITIES","spend":104676.44},{"category":"TAXES","spend":99856.80},{"category":"FRANCHISE","spend":94896.90},{"category":"INSURANCE","spend":65928.00},{"category":"SUPPLIES","spend":57694.14},{"category":"MAINTENANCE","spend":42367.29},{"category":"MARKETING","spend":39713.65},{"category":"TECHNOLOGY","spend":20911.80}],
+    "P005": [{"category":"PAYROLL","spend":441943.80},{"category":"TAXES","spend":90621.60},{"category":"UTILITIES","spend":83289.36},{"category":"INSURANCE","spend":59597.00},{"category":"MAINTENANCE","spend":58625.12},{"category":"SUPPLIES","spend":54477.78},{"category":"MARKETING","spend":40662.18},{"category":"TECHNOLOGY","spend":17668.80}],
+    "P006": [{"category":"PAYROLL","spend":496133.00},{"category":"UTILITIES","spend":148883.20},{"category":"TAXES","spend":118320.00},{"category":"SUPPLIES","spend":94001.60},{"category":"INSURANCE","spend":79968.00},{"category":"MAINTENANCE","spend":61104.06},{"category":"MARKETING","spend":41739.52},{"category":"TECHNOLOGY","spend":27390.00}],
+    "P007": [{"category":"PAYROLL","spend":434706.60},{"category":"TAXES","spend":87870.00},{"category":"UTILITIES","spend":72201.12},{"category":"INSURANCE","spend":58139.20},{"category":"SUPPLIES","spend":50980.32},{"category":"MAINTENANCE","spend":46164.26},{"category":"MARKETING","spend":41770.83},{"category":"TECHNOLOGY","spend":16358.10}],
+    "P008": [{"category":"PAYROLL","spend":447356.40},{"category":"TAXES","spend":92907.00},{"category":"UTILITIES","spend":86231.84},{"category":"SUPPLIES","spend":62311.92},{"category":"INSURANCE","spend":61194.00},{"category":"MAINTENANCE","spend":59719.37},{"category":"MARKETING","spend":40684.84},{"category":"TECHNOLOGY","spend":18392.70}],
+    "P009": [{"category":"PAYROLL","spend":476797.80},{"category":"UTILITIES","spend":129075.10},{"category":"FRANCHISE","spend":119023.80},{"category":"TAXES","spend":109024.20},{"category":"SUPPLIES","spend":88709.40},{"category":"INSURANCE","spend":73985.20},{"category":"MAINTENANCE","spend":46624.71},{"category":"MARKETING","spend":39252.12},{"category":"TECHNOLOGY","spend":24759.70}],
+    "P010": [{"category":"PAYROLL","spend":468832.00},{"category":"UTILITIES","spend":110268.00},{"category":"TAXES","spend":101885.40},{"category":"SUPPLIES","spend":77115.06},{"category":"INSURANCE","spend":69276.00},{"category":"MAINTENANCE","spend":63987.72},{"category":"MARKETING","spend":42165.85},{"category":"TECHNOLOGY","spend":21920.80}]
+  },
+  "guest_intents": {
+    "P001": [{"intent":"amenity_inquiry","cnt":243,"auto_rate":65.0},{"intent":"maintenance_request","cnt":216,"auto_rate":63.0},{"intent":"directions","cnt":134,"auto_rate":67.2},{"intent":"feedback","cnt":133,"auto_rate":64.7},{"intent":"lost_and_found","cnt":128,"auto_rate":60.9}],
+    "P002": [{"intent":"maintenance_request","cnt":192,"auto_rate":62.5},{"intent":"amenity_inquiry","cnt":165,"auto_rate":73.3},{"intent":"wifi_password","cnt":107,"auto_rate":63.6},{"intent":"directions","cnt":98,"auto_rate":57.1},{"intent":"late_checkout","cnt":96,"auto_rate":63.5}],
+    "P003": [{"intent":"maintenance_request","cnt":298,"auto_rate":64.1},{"intent":"amenity_inquiry","cnt":290,"auto_rate":69.3},{"intent":"lost_and_found","cnt":162,"auto_rate":56.2},{"intent":"directions","cnt":160,"auto_rate":65.6},{"intent":"local_info","cnt":157,"auto_rate":68.8}],
+    "P004": [{"intent":"maintenance_request","cnt":182,"auto_rate":67.6},{"intent":"amenity_inquiry","cnt":166,"auto_rate":61.4},{"intent":"reservation_change","cnt":93,"auto_rate":61.3},{"intent":"lost_and_found","cnt":88,"auto_rate":58.0},{"intent":"directions","cnt":87,"auto_rate":64.4}],
+    "P005": [{"intent":"amenity_inquiry","cnt":125,"auto_rate":62.4},{"intent":"maintenance_request","cnt":114,"auto_rate":65.8},{"intent":"late_checkout","cnt":71,"auto_rate":70.4},{"intent":"local_info","cnt":70,"auto_rate":65.7},{"intent":"lost_and_found","cnt":69,"auto_rate":58.0}],
+    "P006": [{"intent":"amenity_inquiry","cnt":278,"auto_rate":62.2},{"intent":"maintenance_request","cnt":267,"auto_rate":59.9},{"intent":"local_info","cnt":186,"auto_rate":68.3},{"intent":"supply_request","cnt":155,"auto_rate":61.3},{"intent":"lost_and_found","cnt":154,"auto_rate":68.2}],
+    "P007": [{"intent":"amenity_inquiry","cnt":115,"auto_rate":64.3},{"intent":"maintenance_request","cnt":104,"auto_rate":74.0},{"intent":"wifi_password","cnt":76,"auto_rate":75.0},{"intent":"lost_and_found","cnt":70,"auto_rate":67.1},{"intent":"late_checkout","cnt":68,"auto_rate":61.8}],
+    "P008": [{"intent":"maintenance_request","cnt":189,"auto_rate":63.0},{"intent":"amenity_inquiry","cnt":183,"auto_rate":68.3},{"intent":"reservation_change","cnt":102,"auto_rate":65.7},{"intent":"wifi_password","cnt":94,"auto_rate":61.7},{"intent":"feedback","cnt":93,"auto_rate":66.7}],
+    "P009": [{"intent":"maintenance_request","cnt":222,"auto_rate":62.2},{"intent":"amenity_inquiry","cnt":201,"auto_rate":63.7},{"intent":"reservation_change","cnt":131,"auto_rate":61.8},{"intent":"supply_request","cnt":117,"auto_rate":53.0},{"intent":"feedback","cnt":114,"auto_rate":58.8}],
+    "P010": [{"intent":"amenity_inquiry","cnt":253,"auto_rate":64.4},{"intent":"maintenance_request","cnt":232,"auto_rate":65.1},{"intent":"late_checkout","cnt":132,"auto_rate":65.9},{"intent":"reservation_change","cnt":123,"auto_rate":61.0},{"intent":"feedback","cnt":120,"auto_rate":66.7}]
+  },
+  "reviews": {
+    "P001": [{"platform":"Booking.com","count":85,"avg_rating":3.78,"sentiment":0.636},{"platform":"Google","count":83,"avg_rating":3.95,"sentiment":0.654},{"platform":"TripAdvisor","count":97,"avg_rating":3.93,"sentiment":0.667},{"platform":"Yelp","count":93,"avg_rating":3.82,"sentiment":0.626}],
+    "P002": [{"platform":"Booking.com","count":56,"avg_rating":4.11,"sentiment":0.687},{"platform":"Google","count":62,"avg_rating":3.81,"sentiment":0.645},{"platform":"TripAdvisor","count":74,"avg_rating":3.84,"sentiment":0.635},{"platform":"Yelp","count":74,"avg_rating":4.03,"sentiment":0.673}],
+    "P003": [{"platform":"Booking.com","count":117,"avg_rating":4.03,"sentiment":0.694},{"platform":"Google","count":112,"avg_rating":3.91,"sentiment":0.658},{"platform":"TripAdvisor","count":115,"avg_rating":3.90,"sentiment":0.65},{"platform":"Yelp","count":103,"avg_rating":3.95,"sentiment":0.662}],
+    "P004": [{"platform":"Booking.com","count":74,"avg_rating":3.78,"sentiment":0.631},{"platform":"Google","count":80,"avg_rating":3.83,"sentiment":0.649},{"platform":"TripAdvisor","count":68,"avg_rating":3.87,"sentiment":0.649},{"platform":"Yelp","count":73,"avg_rating":3.73,"sentiment":0.629}],
+    "P005": [{"platform":"Booking.com","count":41,"avg_rating":4.05,"sentiment":0.68},{"platform":"Google","count":49,"avg_rating":3.67,"sentiment":0.586},{"platform":"TripAdvisor","count":56,"avg_rating":3.68,"sentiment":0.589},{"platform":"Yelp","count":50,"avg_rating":3.60,"sentiment":0.57}],
+    "P006": [{"platform":"Booking.com","count":103,"avg_rating":3.83,"sentiment":0.648},{"platform":"Google","count":95,"avg_rating":3.87,"sentiment":0.648},{"platform":"TripAdvisor","count":124,"avg_rating":4.07,"sentiment":0.69},{"platform":"Yelp","count":108,"avg_rating":3.96,"sentiment":0.657}],
+    "P007": [{"platform":"Booking.com","count":55,"avg_rating":3.67,"sentiment":0.593},{"platform":"Google","count":51,"avg_rating":3.65,"sentiment":0.613},{"platform":"TripAdvisor","count":56,"avg_rating":3.88,"sentiment":0.646},{"platform":"Yelp","count":48,"avg_rating":3.79,"sentiment":0.642}],
+    "P008": [{"platform":"Booking.com","count":72,"avg_rating":4.07,"sentiment":0.687},{"platform":"Google","count":55,"avg_rating":4.11,"sentiment":0.695},{"platform":"TripAdvisor","count":63,"avg_rating":3.95,"sentiment":0.675},{"platform":"Yelp","count":69,"avg_rating":3.88,"sentiment":0.648}],
+    "P009": [{"platform":"Booking.com","count":94,"avg_rating":3.77,"sentiment":0.63},{"platform":"Google","count":94,"avg_rating":3.79,"sentiment":0.617},{"platform":"TripAdvisor","count":100,"avg_rating":3.75,"sentiment":0.617},{"platform":"Yelp","count":93,"avg_rating":3.99,"sentiment":0.685}],
+    "P010": [{"platform":"Booking.com","count":95,"avg_rating":3.88,"sentiment":0.643},{"platform":"Google","count":94,"avg_rating":3.78,"sentiment":0.621},{"platform":"TripAdvisor","count":109,"avg_rating":3.81,"sentiment":0.639},{"platform":"Yelp","count":97,"avg_rating":3.82,"sentiment":0.637}]
+  },
+  "loyalty_tiers": {
+    "P001": [{"tier":"VIP","cnt":642},{"tier":"REGULAR","cnt":600},{"tier":"RETURNING","cnt":372},{"tier":"FIRST_VISIT","cnt":259}],
+    "P002": [{"tier":"REGULAR","cnt":473},{"tier":"VIP","cnt":436},{"tier":"RETURNING","cnt":295},{"tier":"FIRST_VISIT","cnt":194}],
+    "P003": [{"tier":"VIP","cnt":836},{"tier":"REGULAR","cnt":755},{"tier":"RETURNING","cnt":472},{"tier":"FIRST_VISIT","cnt":307}],
+    "P004": [{"tier":"VIP","cnt":456},{"tier":"REGULAR","cnt":452},{"tier":"RETURNING","cnt":301},{"tier":"FIRST_VISIT","cnt":172}],
+    "P005": [{"tier":"VIP","cnt":342},{"tier":"REGULAR","cnt":327},{"tier":"RETURNING","cnt":181},{"tier":"FIRST_VISIT","cnt":121}],
+    "P006": [{"tier":"VIP","cnt":781},{"tier":"REGULAR","cnt":730},{"tier":"RETURNING","cnt":484},{"tier":"FIRST_VISIT","cnt":319}],
+    "P007": [{"tier":"VIP","cnt":319},{"tier":"REGULAR","cnt":307},{"tier":"RETURNING","cnt":200},{"tier":"FIRST_VISIT","cnt":109}],
+    "P008": [{"tier":"REGULAR","cnt":466},{"tier":"VIP","cnt":461},{"tier":"RETURNING","cnt":289},{"tier":"FIRST_VISIT","cnt":183}],
+    "P009": [{"tier":"VIP","cnt":655},{"tier":"REGULAR","cnt":639},{"tier":"RETURNING","cnt":342},{"tier":"FIRST_VISIT","cnt":221}],
+    "P010": [{"tier":"VIP","cnt":633},{"tier":"REGULAR","cnt":598},{"tier":"RETURNING","cnt":400},{"tier":"FIRST_VISIT","cnt":258}]
+  },
+  "asset_health": {
+    "P001": [{"type":"HVAC","cnt":41,"avg_health":73.5,"at_risk":2},{"type":"MICROWAVE","cnt":38,"avg_health":65.9,"at_risk":12},{"type":"REFRIGERATOR","cnt":38,"avg_health":60.4,"at_risk":13},{"type":"TV","cnt":37,"avg_health":61.7,"at_risk":13},{"type":"WATER_HEATER","cnt":35,"avg_health":62.6,"at_risk":11}],
+    "P002": [{"type":"HVAC","cnt":29,"avg_health":68.6,"at_risk":5},{"type":"MICROWAVE","cnt":28,"avg_health":63.0,"at_risk":8},{"type":"REFRIGERATOR","cnt":35,"avg_health":66.0,"at_risk":8},{"type":"TV","cnt":29,"avg_health":67.5,"at_risk":5},{"type":"WATER_HEATER","cnt":32,"avg_health":72.5,"at_risk":5}],
+    "P003": [{"type":"HVAC","cnt":44,"avg_health":69.9,"at_risk":9},{"type":"MICROWAVE","cnt":49,"avg_health":64.3,"at_risk":15},{"type":"REFRIGERATOR","cnt":55,"avg_health":65.8,"at_risk":15},{"type":"TV","cnt":47,"avg_health":65.0,"at_risk":10},{"type":"WATER_HEATER","cnt":53,"avg_health":68.1,"at_risk":12}],
+    "P004": [{"type":"HVAC","cnt":31,"avg_health":61.3,"at_risk":11},{"type":"MICROWAVE","cnt":37,"avg_health":66.1,"at_risk":8},{"type":"REFRIGERATOR","cnt":37,"avg_health":64.8,"at_risk":10},{"type":"TV","cnt":36,"avg_health":69.9,"at_risk":5},{"type":"WATER_HEATER","cnt":41,"avg_health":58.7,"at_risk":17}],
+    "P005": [{"type":"HVAC","cnt":25,"avg_health":64.2,"at_risk":8},{"type":"MICROWAVE","cnt":30,"avg_health":69.7,"at_risk":7},{"type":"REFRIGERATOR","cnt":33,"avg_health":64.0,"at_risk":12},{"type":"TV","cnt":26,"avg_health":74.6,"at_risk":2},{"type":"WATER_HEATER","cnt":32,"avg_health":68.7,"at_risk":10}],
+    "P006": [{"type":"HVAC","cnt":50,"avg_health":64.4,"at_risk":12},{"type":"MICROWAVE","cnt":55,"avg_health":67.2,"at_risk":13},{"type":"REFRIGERATOR","cnt":56,"avg_health":66.2,"at_risk":17},{"type":"TV","cnt":46,"avg_health":62.4,"at_risk":13},{"type":"WATER_HEATER","cnt":51,"avg_health":63.3,"at_risk":14}],
+    "P007": [{"type":"HVAC","cnt":30,"avg_health":63.2,"at_risk":12},{"type":"MICROWAVE","cnt":25,"avg_health":57.0,"at_risk":9},{"type":"REFRIGERATOR","cnt":21,"avg_health":64.5,"at_risk":8},{"type":"TV","cnt":21,"avg_health":70.8,"at_risk":3},{"type":"WATER_HEATER","cnt":22,"avg_health":69.4,"at_risk":5}],
+    "P008": [{"type":"HVAC","cnt":30,"avg_health":67.8,"at_risk":7},{"type":"MICROWAVE","cnt":25,"avg_health":71.3,"at_risk":5},{"type":"REFRIGERATOR","cnt":26,"avg_health":54.6,"at_risk":13},{"type":"TV","cnt":31,"avg_health":66.6,"at_risk":6},{"type":"WATER_HEATER","cnt":28,"avg_health":65.2,"at_risk":10}],
+    "P009": [{"type":"HVAC","cnt":46,"avg_health":65.2,"at_risk":13},{"type":"MICROWAVE","cnt":45,"avg_health":67.1,"at_risk":8},{"type":"REFRIGERATOR","cnt":46,"avg_health":62.0,"at_risk":18},{"type":"TV","cnt":45,"avg_health":66.8,"at_risk":8},{"type":"WATER_HEATER","cnt":42,"avg_health":68.4,"at_risk":9}],
+    "P010": [{"type":"HVAC","cnt":39,"avg_health":69.3,"at_risk":10},{"type":"MICROWAVE","cnt":42,"avg_health":67.1,"at_risk":7},{"type":"REFRIGERATOR","cnt":42,"avg_health":67.8,"at_risk":12},{"type":"TV","cnt":38,"avg_health":64.6,"at_risk":9},{"type":"WATER_HEATER","cnt":36,"avg_health":71.5,"at_risk":7}]
+  },
+  "compliance": {
+    "P001": {"CURRENT":8,"DUE_SOON":2,"OVERDUE":1},
+    "P002": {"CURRENT":6,"DUE_SOON":2,"OVERDUE":1},
+    "P003": {"CURRENT":8,"DUE_SOON":2,"OVERDUE":1},
+    "P004": {"CURRENT":5,"DUE_SOON":2,"OVERDUE":1},
+    "P005": {"CURRENT":5,"DUE_SOON":3,"OVERDUE":2},
+    "P006": {"CURRENT":5,"DUE_SOON":5,"OVERDUE":2},
+    "P007": {"CURRENT":7,"DUE_SOON":2,"OVERDUE":0},
+    "P008": {"CURRENT":6,"DUE_SOON":3,"OVERDUE":0},
+    "P009": {"CURRENT":6,"DUE_SOON":3,"OVERDUE":0},
+    "P010": {"CURRENT":5,"DUE_SOON":2,"OVERDUE":3}
+  },
+  "extended_stay": {
+    "P001": [{"status":"ACTIVE","cnt":8},{"status":"DEPARTED","cnt":5},{"status":"NOTICE_GIVEN","cnt":2}],
+    "P002": [{"status":"DEPARTED","cnt":7},{"status":"ACTIVE","cnt":4},{"status":"EVICTION","cnt":2},{"status":"NOTICE_GIVEN","cnt":2}],
+    "P003": [{"status":"DEPARTED","cnt":6},{"status":"ACTIVE","cnt":5},{"status":"EVICTION","cnt":3},{"status":"NOTICE_GIVEN","cnt":1}],
+    "P004": [{"status":"ACTIVE","cnt":8},{"status":"DEPARTED","cnt":5},{"status":"NOTICE_GIVEN","cnt":2}],
+    "P005": [{"status":"ACTIVE","cnt":9},{"status":"DEPARTED","cnt":3},{"status":"NOTICE_GIVEN","cnt":2},{"status":"EVICTION","cnt":1}],
+    "P006": [{"status":"ACTIVE","cnt":8},{"status":"DEPARTED","cnt":5},{"status":"EVICTION","cnt":2}],
+    "P007": [{"status":"ACTIVE","cnt":7},{"status":"DEPARTED","cnt":7},{"status":"NOTICE_GIVEN","cnt":1}],
+    "P008": [{"status":"ACTIVE","cnt":10},{"status":"DEPARTED","cnt":3},{"status":"NOTICE_GIVEN","cnt":1},{"status":"EVICTION","cnt":1}],
+    "P009": [{"status":"ACTIVE","cnt":7},{"status":"DEPARTED","cnt":5},{"status":"NOTICE_GIVEN","cnt":2},{"status":"EVICTION","cnt":1}],
+    "P010": [{"status":"DEPARTED","cnt":7},{"status":"ACTIVE","cnt":7},{"status":"NOTICE_GIVEN","cnt":1}]
+  },
+  "benchmarking": {
+    "P001": [{"metric":"adr_usd","my_value":84,"p25":58,"median":72,"p75":89},{"metric":"direct_booking_pct","my_value":10,"p25":12,"median":18,"p75":28},{"metric":"energy_cost_per_room","my_value":42,"p25":35,"median":42,"p75":55},{"metric":"expense_per_room_usd","my_value":1033,"p25":900,"median":1050,"p75":1250},{"metric":"labor_cost_pct","my_value":29,"p25":28,"median":32,"p75":38},{"metric":"occupancy_pct","my_value":75,"p25":52,"median":65,"p75":78},{"metric":"review_score_avg","my_value":4.0,"p25":3.2,"median":3.8,"p75":4.3},{"metric":"revpar_usd","my_value":65,"p25":32,"median":46,"p75":62}],
+    "P002": [{"metric":"adr_usd","my_value":63,"p25":58,"median":72,"p75":89},{"metric":"direct_booking_pct","my_value":38,"p25":12,"median":18,"p75":28},{"metric":"occupancy_pct","my_value":74,"p25":52,"median":65,"p75":78},{"metric":"revpar_usd","my_value":69,"p25":32,"median":46,"p75":62}],
+    "P003": [{"metric":"adr_usd","my_value":114,"p25":58,"median":72,"p75":89},{"metric":"direct_booking_pct","my_value":37,"p25":12,"median":18,"p75":28},{"metric":"occupancy_pct","my_value":71,"p25":52,"median":65,"p75":78},{"metric":"revpar_usd","my_value":65,"p25":32,"median":46,"p75":62}],
+    "P004": [{"metric":"adr_usd","my_value":72,"p25":58,"median":72,"p75":89},{"metric":"occupancy_pct","my_value":57,"p25":52,"median":65,"p75":78},{"metric":"revpar_usd","my_value":72,"p25":32,"median":46,"p75":62}],
+    "P005": [{"metric":"adr_usd","my_value":87,"p25":58,"median":72,"p75":89},{"metric":"occupancy_pct","my_value":71,"p25":52,"median":65,"p75":78},{"metric":"revpar_usd","my_value":41,"p25":32,"median":46,"p75":62}],
+    "P006": [{"metric":"adr_usd","my_value":93,"p25":58,"median":72,"p75":89},{"metric":"occupancy_pct","my_value":80,"p25":52,"median":65,"p75":78},{"metric":"review_score_avg","my_value":4.6,"p25":3.2,"median":3.8,"p75":4.3},{"metric":"revpar_usd","my_value":91,"p25":32,"median":46,"p75":62}],
+    "P007": [{"metric":"adr_usd","my_value":70,"p25":58,"median":72,"p75":89},{"metric":"occupancy_pct","my_value":76,"p25":52,"median":65,"p75":78},{"metric":"review_score_avg","my_value":4.1,"p25":3.2,"median":3.8,"p75":4.3},{"metric":"revpar_usd","my_value":53,"p25":32,"median":46,"p75":62}],
+    "P008": [{"metric":"adr_usd","my_value":98,"p25":58,"median":72,"p75":89},{"metric":"occupancy_pct","my_value":58,"p25":52,"median":65,"p75":78},{"metric":"revpar_usd","my_value":89,"p25":32,"median":46,"p75":62}],
+    "P009": [{"metric":"adr_usd","my_value":116,"p25":58,"median":72,"p75":89},{"metric":"occupancy_pct","my_value":83,"p25":52,"median":65,"p75":78},{"metric":"revpar_usd","my_value":41,"p25":32,"median":46,"p75":62}],
+    "P010": [{"metric":"adr_usd","my_value":125,"p25":58,"median":72,"p75":89},{"metric":"occupancy_pct","my_value":73,"p25":52,"median":65,"p75":78},{"metric":"review_score_avg","my_value":4.6,"p25":3.2,"median":3.8,"p75":4.3},{"metric":"revpar_usd","my_value":84,"p25":32,"median":46,"p75":62}]
+  },
+  "purchases": {
+    "P001": [{"category":"LINENS","spend":36824.62},{"category":"TECHNOLOGY","spend":14128.48},{"category":"TOILETRIES","spend":13080.39},{"category":"CLEANING","spend":10826.29},{"category":"MAINTENANCE","spend":8417.21},{"category":"BREAKFAST","spend":6630.65},{"category":"UNIFORMS","spend":5668.98}],
+    "P002": [{"category":"LINENS","spend":44763.54},{"category":"CLEANING","spend":16292.13},{"category":"TECHNOLOGY","spend":15080.60},{"category":"TOILETRIES","spend":14739.77},{"category":"MAINTENANCE","spend":10278.67},{"category":"BREAKFAST","spend":7391.53},{"category":"UNIFORMS","spend":5487.49}],
+    "P003": [{"category":"LINENS","spend":36119.19},{"category":"TECHNOLOGY","spend":16588.91},{"category":"TOILETRIES","spend":15172.85},{"category":"CLEANING","spend":11714.95},{"category":"MAINTENANCE","spend":8401.17},{"category":"UNIFORMS","spend":7204.39},{"category":"BREAKFAST","spend":4698.89}],
+    "P004": [{"category":"LINENS","spend":42044.20},{"category":"TECHNOLOGY","spend":14689.13},{"category":"TOILETRIES","spend":12443.60},{"category":"CLEANING","spend":10521.87},{"category":"MAINTENANCE","spend":8830.60},{"category":"UNIFORMS","spend":7797.90},{"category":"BREAKFAST","spend":5741.58}],
+    "P005": [{"category":"LINENS","spend":26734.52},{"category":"TECHNOLOGY","spend":17115.43},{"category":"TOILETRIES","spend":15410.26},{"category":"CLEANING","spend":10584.36},{"category":"MAINTENANCE","spend":8599.23},{"category":"UNIFORMS","spend":6258.58},{"category":"BREAKFAST","spend":4378.39}],
+    "P006": [{"category":"LINENS","spend":35614.19},{"category":"TECHNOLOGY","spend":17140.46},{"category":"TOILETRIES","spend":13905.66},{"category":"CLEANING","spend":10286.70},{"category":"BREAKFAST","spend":6427.79},{"category":"UNIFORMS","spend":5097.67},{"category":"MAINTENANCE","spend":4366.06}],
+    "P007": [{"category":"LINENS","spend":36950.29},{"category":"TOILETRIES","spend":18572.57},{"category":"CLEANING","spend":13235.43},{"category":"TECHNOLOGY","spend":13196.62},{"category":"MAINTENANCE","spend":9955.47},{"category":"BREAKFAST","spend":7415.78},{"category":"UNIFORMS","spend":5988.90}],
+    "P008": [{"category":"LINENS","spend":27452.15},{"category":"TECHNOLOGY","spend":20215.96},{"category":"TOILETRIES","spend":16165.78},{"category":"CLEANING","spend":13701.05},{"category":"BREAKFAST","spend":7785.75},{"category":"MAINTENANCE","spend":6110.81},{"category":"UNIFORMS","spend":4146.41}],
+    "P009": [{"category":"LINENS","spend":34130.58},{"category":"TECHNOLOGY","spend":18554.93},{"category":"TOILETRIES","spend":13502.43},{"category":"CLEANING","spend":10513.32},{"category":"MAINTENANCE","spend":9371.63},{"category":"UNIFORMS","spend":7428.99},{"category":"BREAKFAST","spend":4711.07}],
+    "P010": [{"category":"LINENS","spend":34852.92},{"category":"CLEANING","spend":13974.66},{"category":"TECHNOLOGY","spend":11107.49},{"category":"TOILETRIES","spend":11094.07},{"category":"BREAKFAST","spend":7585.53},{"category":"UNIFORMS","spend":6949.92},{"category":"MAINTENANCE","spend":6214.10}]
+  },
+  "ota_fees": [
+    {"channel":"Booking.com","year":2024,"commission":0.15,"cc_fee":0.029},
+    {"channel":"Booking.com","year":2025,"commission":0.16,"cc_fee":0.0295},
+    {"channel":"Booking.com","year":2026,"commission":0.17,"cc_fee":0.03},
+    {"channel":"Direct-Phone","year":2024,"commission":0,"cc_fee":0.029},
+    {"channel":"Direct-Website","year":2024,"commission":0,"cc_fee":0.029,"base_fee":2.50},
+    {"channel":"Direct-Website","year":2026,"commission":0,"cc_fee":0.03,"base_fee":2.75},
+    {"channel":"Expedia","year":2024,"commission":0.18,"cc_fee":0.029},
+    {"channel":"Expedia","year":2025,"commission":0.18,"cc_fee":0.0295},
+    {"channel":"Expedia","year":2026,"commission":0.19,"cc_fee":0.03},
+    {"channel":"Google Hotels","year":2024,"commission":0.12,"cc_fee":0.029},
+    {"channel":"Google Hotels","year":2025,"commission":0.12,"cc_fee":0.0295},
+    {"channel":"Google Hotels","year":2026,"commission":0.13,"cc_fee":0.03},
+    {"channel":"Walk-in","year":2024,"commission":0,"cc_fee":0.029}
+  ],
+  "coop_catalog": [
+    {"id":"COOP013","category":"BREAKFAST","item":"Coffee - Ground 2lb","brand":"Morning Blend","price":9.99},
+    {"id":"COOP015","category":"BREAKFAST","item":"Orange Juice - 1 Gal","brand":"SunBright","price":5.25},
+    {"id":"COOP014","category":"BREAKFAST","item":"Waffle Mix - 5lb","brand":"Golden Batter","price":7.50},
+    {"id":"COOP009","category":"CLEANING","item":"All-Purpose Cleaner - 1 Gal","brand":"CleanPro","price":8.99},
+    {"id":"COOP011","category":"CLEANING","item":"Bathroom Disinfectant - 1 Gal","brand":"CleanPro","price":11.25},
+    {"id":"COOP010","category":"CLEANING","item":"Glass Cleaner - 1 Gal","brand":"CleanPro","price":6.50},
+    {"id":"COOP012","category":"CLEANING","item":"Laundry Detergent - 5 Gal","brand":"CleanPro","price":32.50},
+    {"id":"COOP001","category":"LINENS","item":"Bath Towel - White 27x54","brand":"ProTex","price":3.25},
+    {"id":"COOP002","category":"LINENS","item":"Bed Sheet Set - Queen","brand":"ProTex","price":12.50},
+    {"id":"COOP004","category":"LINENS","item":"Mattress Pad - Queen","brand":"SleepWell","price":18.99},
+    {"id":"COOP003","category":"LINENS","item":"Pillow - Standard","brand":"SleepWell","price":6.75},
+    {"id":"COOP016","category":"MAINTENANCE","item":"Air Filter - HVAC Standard","brand":"FilterMax","price":8.99},
+    {"id":"COOP017","category":"MAINTENANCE","item":"Light Bulb - LED 60W Equiv","brand":"BrightStar","price":2.50},
+    {"id":"COOP018","category":"TECHNOLOGY","item":"Key Card - RFID","brand":"SecureEntry","price":0.85},
+    {"id":"COOP019","category":"TECHNOLOGY","item":"TV Remote - Universal","brand":"TechServe","price":4.99},
+    {"id":"COOP008","category":"TOILETRIES","item":"Body Lotion - 1oz Bottle","brand":"Fresh Start","price":0.20},
+    {"id":"COOP007","category":"TOILETRIES","item":"Conditioner - 1oz Bottle","brand":"Fresh Start","price":0.18},
+    {"id":"COOP005","category":"TOILETRIES","item":"Shampoo - 1oz Bottle","brand":"Fresh Start","price":0.18},
+    {"id":"COOP006","category":"TOILETRIES","item":"Soap Bar - 1.5oz","brand":"Fresh Start","price":0.12},
+    {"id":"COOP020","category":"UNIFORMS","item":"Polo Shirt - Staff","brand":"WorkWear","price":12.99}
+  ],
+  "noshow_summary": {
+    "P001":{"total":2176,"no_shows":118,"rate":5.4},"P002":{"total":1630,"no_shows":83,"rate":5.1},"P003":{"total":2706,"no_shows":140,"rate":5.2},"P004":{"total":1597,"no_shows":92,"rate":5.8},"P005":{"total":1085,"no_shows":42,"rate":3.9},"P006":{"total":2634,"no_shows":116,"rate":4.4},"P007":{"total":1081,"no_shows":51,"rate":4.7},"P008":{"total":1624,"no_shows":94,"rate":5.8},"P009":{"total":2174,"no_shows":132,"rate":6.1},"P010":{"total":2153,"no_shows":94,"rate":4.4}
+  },
+  "noshow_by_day": {
+    "P001":[{"day":"Sun","rate":7.5},{"day":"Mon","rate":4.4},{"day":"Tue","rate":4.6},{"day":"Wed","rate":6.9},{"day":"Thu","rate":7.6},{"day":"Fri","rate":4.9},{"day":"Sat","rate":2.9}],
+    "P002":[{"day":"Sun","rate":6.6},{"day":"Mon","rate":7.5},{"day":"Tue","rate":5.3},{"day":"Wed","rate":3.2},{"day":"Thu","rate":3.3},{"day":"Fri","rate":4.8},{"day":"Sat","rate":5.0}],
+    "P003":[{"day":"Sun","rate":4.9},{"day":"Mon","rate":7.0},{"day":"Tue","rate":6.6},{"day":"Wed","rate":4.3},{"day":"Thu","rate":6.0},{"day":"Fri","rate":5.2},{"day":"Sat","rate":3.1}],
+    "P004":[{"day":"Sun","rate":4.5},{"day":"Mon","rate":6.3},{"day":"Tue","rate":6.2},{"day":"Wed","rate":7.1},{"day":"Thu","rate":4.7},{"day":"Fri","rate":6.6},{"day":"Sat","rate":4.8}],
+    "P005":[{"day":"Sun","rate":1.4},{"day":"Mon","rate":5.1},{"day":"Tue","rate":5.0},{"day":"Wed","rate":6.7},{"day":"Thu","rate":2.9},{"day":"Fri","rate":1.6},{"day":"Sat","rate":4.8}],
+    "P006":[{"day":"Sun","rate":3.9},{"day":"Mon","rate":4.2},{"day":"Tue","rate":3.7},{"day":"Wed","rate":5.6},{"day":"Thu","rate":5.2},{"day":"Fri","rate":4.1},{"day":"Sat","rate":4.4}],
+    "P007":[{"day":"Sun","rate":3.6},{"day":"Mon","rate":4.9},{"day":"Tue","rate":2.2},{"day":"Wed","rate":5.3},{"day":"Thu","rate":4.8},{"day":"Fri","rate":6.2},{"day":"Sat","rate":5.2}],
+    "P008":[{"day":"Sun","rate":4.8},{"day":"Mon","rate":8.8},{"day":"Tue","rate":5.0},{"day":"Wed","rate":6.1},{"day":"Thu","rate":7.6},{"day":"Fri","rate":4.9},{"day":"Sat","rate":4.1}],
+    "P009":[{"day":"Sun","rate":6.8},{"day":"Mon","rate":7.4},{"day":"Tue","rate":5.9},{"day":"Wed","rate":5.1},{"day":"Thu","rate":4.7},{"day":"Fri","rate":6.4},{"day":"Sat","rate":6.1}],
+    "P010":[{"day":"Sun","rate":4.3},{"day":"Mon","rate":4.9},{"day":"Tue","rate":4.1},{"day":"Wed","rate":4.6},{"day":"Thu","rate":5.1},{"day":"Fri","rate":4.3},{"day":"Sat","rate":3.6}]
+  },
+  "noshow_risk": {
+    "P001":[{"channel":"Google Hotels","policy":"free","reservations":124,"rate":9.7},{"channel":"Expedia","policy":"flexible","reservations":116,"rate":7.8},{"channel":"Expedia","policy":"non-refundable","reservations":143,"rate":7.7},{"channel":"Walk-in","policy":"free","reservations":120,"rate":6.7},{"channel":"Walk-in","policy":"flexible","reservations":93,"rate":6.5}],
+    "P002":[{"channel":"Booking.com","policy":"flexible","reservations":79,"rate":10.1},{"channel":"Google Hotels","policy":"flexible","reservations":83,"rate":8.4},{"channel":"Walk-in","policy":"free","reservations":78,"rate":7.7},{"channel":"Expedia","policy":"free","reservations":106,"rate":7.5},{"channel":"Booking.com","policy":"non-refundable","reservations":98,"rate":7.1}],
+    "P003":[{"channel":"Google Hotels","policy":"non-refundable","reservations":154,"rate":8.4},{"channel":"Google Hotels","policy":"free","reservations":163,"rate":7.4},{"channel":"Direct-Website","policy":"non-refundable","reservations":143,"rate":6.3},{"channel":"Expedia","policy":"non-refundable","reservations":161,"rate":6.2},{"channel":"Booking.com","policy":"non-refundable","reservations":147,"rate":6.1}],
+    "P004":[{"channel":"Walk-in","policy":"flexible","reservations":62,"rate":12.9},{"channel":"Direct-Website","policy":"free","reservations":93,"rate":9.7},{"channel":"Google Hotels","policy":"flexible","reservations":94,"rate":9.6},{"channel":"Expedia","policy":"non-refundable","reservations":84,"rate":9.5},{"channel":"Expedia","policy":"free","reservations":97,"rate":9.3}],
+    "P005":[{"channel":"Direct-Website","policy":"free","reservations":60,"rate":10.0},{"channel":"Walk-in","policy":"non-refundable","reservations":50,"rate":10.0},{"channel":"Expedia","policy":"non-refundable","reservations":70,"rate":8.6},{"channel":"Direct-Website","policy":"flexible","reservations":57,"rate":5.3},{"channel":"Booking.com","policy":"non-refundable","reservations":63,"rate":4.8}],
+    "P006":[{"channel":"Booking.com","policy":"flexible","reservations":151,"rate":7.3},{"channel":"Walk-in","policy":"non-refundable","reservations":151,"rate":6.0},{"channel":"Walk-in","policy":"flexible","reservations":136,"rate":5.9},{"channel":"Direct-Phone","policy":"flexible","reservations":161,"rate":5.6},{"channel":"Expedia","policy":"flexible","reservations":147,"rate":5.4}],
+    "P007":[{"channel":"Booking.com","policy":"free","reservations":63,"rate":9.5},{"channel":"Booking.com","policy":"non-refundable","reservations":67,"rate":9.0},{"channel":"Walk-in","policy":"flexible","reservations":58,"rate":6.9},{"channel":"Direct-Phone","policy":"non-refundable","reservations":48,"rate":6.3},{"channel":"Booking.com","policy":"flexible","reservations":68,"rate":5.9}],
+    "P008":[{"channel":"Expedia","policy":"free","reservations":96,"rate":10.4},{"channel":"Expedia","policy":"flexible","reservations":93,"rate":9.7},{"channel":"Direct-Website","policy":"free","reservations":104,"rate":8.7},{"channel":"Booking.com","policy":"free","reservations":90,"rate":7.8},{"channel":"Direct-Phone","policy":"free","reservations":102,"rate":6.9}],
+    "P009":[{"channel":"Expedia","policy":"non-refundable","reservations":117,"rate":9.4},{"channel":"Direct-Phone","policy":"non-refundable","reservations":122,"rate":9.0},{"channel":"Direct-Phone","policy":"free","reservations":113,"rate":8.8},{"channel":"Direct-Website","policy":"free","reservations":128,"rate":8.6},{"channel":"Walk-in","policy":"non-refundable","reservations":112,"rate":8.0}],
+    "P010":[{"channel":"Google Hotels","policy":"non-refundable","reservations":125,"rate":8.8},{"channel":"Direct-Phone","policy":"free","reservations":125,"rate":8.0},{"channel":"Direct-Website","policy":"flexible","reservations":112,"rate":7.1},{"channel":"Direct-Phone","policy":"flexible","reservations":136,"rate":6.6},{"channel":"Direct-Website","policy":"free","reservations":109,"rate":4.6}]
+  },
+  "demand_forecast": {
+    "P001":[{"month":"2024-04","res":82,"adr":103.96},{"month":"2024-05","res":85,"adr":103.76},{"month":"2024-06","res":89,"adr":104.95},{"month":"2024-07","res":82,"adr":103.92},{"month":"2024-08","res":94,"adr":105.69},{"month":"2024-09","res":83,"adr":108.15},{"month":"2024-10","res":89,"adr":108.36},{"month":"2024-11","res":88,"adr":107.08},{"month":"2024-12","res":89,"adr":105.45},{"month":"2025-01","res":92,"adr":107.43},{"month":"2025-02","res":84,"adr":101.96},{"month":"2025-03","res":102,"adr":104.63},{"month":"2025-04","res":77,"adr":99.53},{"month":"2025-05","res":93,"adr":98.49},{"month":"2025-06","res":77,"adr":103.85},{"month":"2025-07","res":94,"adr":102.47},{"month":"2025-08","res":88,"adr":104.91},{"month":"2025-09","res":87,"adr":104.65},{"month":"2025-10","res":87,"adr":102.45},{"month":"2025-11","res":86,"adr":104.92},{"month":"2025-12","res":93,"adr":104.05},{"month":"2026-01","res":91,"adr":107.86},{"month":"2026-02","res":86,"adr":105.70},{"month":"2026-03","res":88,"adr":105.54},{"month":"2026-04","res":70,"adr":101.55}],
+    "P002":[{"month":"2024-04","res":72,"adr":73.49},{"month":"2024-05","res":65,"adr":71.18},{"month":"2024-06","res":60,"adr":73.49},{"month":"2024-07","res":66,"adr":75.45},{"month":"2024-08","res":69,"adr":75.16},{"month":"2024-09","res":71,"adr":75.01},{"month":"2024-10","res":66,"adr":75.35},{"month":"2024-11","res":63,"adr":75.22},{"month":"2024-12","res":68,"adr":78.76},{"month":"2025-01","res":63,"adr":76.04},{"month":"2025-02","res":63,"adr":78.44},{"month":"2025-03","res":63,"adr":74.68},{"month":"2025-04","res":67,"adr":73.49},{"month":"2025-05","res":58,"adr":75.12},{"month":"2025-06","res":69,"adr":75.72},{"month":"2025-07","res":68,"adr":74.42},{"month":"2025-08","res":69,"adr":75.21},{"month":"2025-09","res":59,"adr":69.78},{"month":"2025-10","res":67,"adr":76.62},{"month":"2025-11","res":71,"adr":75.42},{"month":"2025-12","res":60,"adr":76.02},{"month":"2026-01","res":70,"adr":73.92},{"month":"2026-02","res":59,"adr":74.98},{"month":"2026-03","res":65,"adr":77.36},{"month":"2026-04","res":59,"adr":75.98}],
+    "P003":[{"month":"2024-04","res":108,"adr":105.36},{"month":"2024-05","res":108,"adr":105.95},{"month":"2024-06","res":113,"adr":102.96},{"month":"2024-07","res":117,"adr":102.57},{"month":"2024-08","res":107,"adr":107.14},{"month":"2024-09","res":105,"adr":103.62},{"month":"2024-10","res":118,"adr":105.42},{"month":"2024-11","res":117,"adr":104.00},{"month":"2024-12","res":103,"adr":103.10},{"month":"2025-01","res":113,"adr":101.68},{"month":"2025-02","res":95,"adr":104.13},{"month":"2025-03","res":115,"adr":102.54},{"month":"2025-04","res":99,"adr":100.61},{"month":"2025-05","res":111,"adr":106.17},{"month":"2025-06","res":111,"adr":100.46},{"month":"2025-07","res":112,"adr":100.21},{"month":"2025-08","res":110,"adr":106.63},{"month":"2025-09","res":104,"adr":108.48},{"month":"2025-10","res":117,"adr":103.82},{"month":"2025-11","res":100,"adr":106.47},{"month":"2025-12","res":107,"adr":101.45},{"month":"2026-01","res":108,"adr":106.12},{"month":"2026-02","res":102,"adr":99.40},{"month":"2026-03","res":107,"adr":107.33},{"month":"2026-04","res":99,"adr":107.30}],
+    "P004":[{"month":"2024-04","res":62,"adr":137.99},{"month":"2024-05","res":67,"adr":135.26},{"month":"2024-06","res":68,"adr":127.09},{"month":"2024-07","res":67,"adr":135.48},{"month":"2024-08","res":70,"adr":136.05},{"month":"2024-09","res":62,"adr":131.10},{"month":"2024-10","res":67,"adr":135.96},{"month":"2024-11","res":65,"adr":141.60},{"month":"2024-12","res":72,"adr":132.59},{"month":"2025-01","res":66,"adr":136.03},{"month":"2025-02","res":60,"adr":136.13},{"month":"2025-03","res":55,"adr":137.95},{"month":"2025-04","res":62,"adr":131.57},{"month":"2025-05","res":61,"adr":137.88},{"month":"2025-06","res":62,"adr":132.00},{"month":"2025-07","res":67,"adr":119.58},{"month":"2025-08","res":62,"adr":136.40},{"month":"2025-09","res":66,"adr":133.55},{"month":"2025-10","res":63,"adr":135.36},{"month":"2025-11","res":66,"adr":136.77},{"month":"2025-12","res":68,"adr":126.27},{"month":"2026-01","res":65,"adr":132.43},{"month":"2026-02","res":59,"adr":129.70},{"month":"2026-03","res":65,"adr":127.63},{"month":"2026-04","res":50,"adr":135.34}],
+    "P005":[{"month":"2024-04","res":36,"adr":74.44},{"month":"2024-05","res":49,"adr":78.48},{"month":"2024-06","res":41,"adr":73.18},{"month":"2024-07","res":50,"adr":73.06},{"month":"2024-08","res":45,"adr":73.39},{"month":"2024-09","res":49,"adr":78.87},{"month":"2024-10","res":40,"adr":76.91},{"month":"2024-11","res":50,"adr":77.66},{"month":"2024-12","res":46,"adr":72.78},{"month":"2025-01","res":43,"adr":75.28},{"month":"2025-02","res":38,"adr":75.57},{"month":"2025-03","res":38,"adr":75.32},{"month":"2025-04","res":48,"adr":70.97},{"month":"2025-05","res":40,"adr":76.19},{"month":"2025-06","res":47,"adr":72.96},{"month":"2025-07","res":50,"adr":70.55},{"month":"2025-08","res":40,"adr":71.65},{"month":"2025-09","res":43,"adr":72.74},{"month":"2025-10","res":44,"adr":71.99},{"month":"2025-11","res":41,"adr":70.84},{"month":"2025-12","res":46,"adr":73.21},{"month":"2026-01","res":46,"adr":74.08},{"month":"2026-02","res":43,"adr":76.32},{"month":"2026-03","res":38,"adr":72.70},{"month":"2026-04","res":34,"adr":72.32}],
+    "P006":[{"month":"2024-04","res":96,"adr":73.56},{"month":"2024-05","res":109,"adr":71.28},{"month":"2024-06","res":102,"adr":75.14},{"month":"2024-07","res":105,"adr":72.88},{"month":"2024-08","res":108,"adr":76.72},{"month":"2024-09","res":96,"adr":73.33},{"month":"2024-10","res":111,"adr":76.49},{"month":"2024-11","res":108,"adr":73.86},{"month":"2024-12","res":109,"adr":77.21},{"month":"2025-01","res":107,"adr":71.51},{"month":"2025-02","res":100,"adr":74.14},{"month":"2025-03","res":106,"adr":75.31},{"month":"2025-04","res":112,"adr":73.60},{"month":"2025-05","res":108,"adr":78.11},{"month":"2025-06","res":105,"adr":71.51},{"month":"2025-07","res":104,"adr":73.31},{"month":"2025-08","res":121,"adr":77.25},{"month":"2025-09","res":107,"adr":74.22},{"month":"2025-10","res":110,"adr":72.60},{"month":"2025-11","res":109,"adr":75.07},{"month":"2025-12","res":110,"adr":74.32},{"month":"2026-01","res":106,"adr":76.25},{"month":"2026-02","res":99,"adr":74.49},{"month":"2026-03","res":106,"adr":73.18},{"month":"2026-04","res":80,"adr":78.99}],
+    "P007":[{"month":"2024-04","res":40,"adr":104.96},{"month":"2024-05","res":50,"adr":105.41},{"month":"2024-06","res":44,"adr":103.50},{"month":"2024-07","res":47,"adr":110.57},{"month":"2024-08","res":46,"adr":97.29},{"month":"2024-09","res":36,"adr":108.58},{"month":"2024-10","res":34,"adr":104.47},{"month":"2024-11","res":46,"adr":105.84},{"month":"2024-12","res":50,"adr":104.28},{"month":"2025-01","res":42,"adr":103.05},{"month":"2025-02","res":46,"adr":98.23},{"month":"2025-03","res":44,"adr":105.91},{"month":"2025-04","res":38,"adr":105.23},{"month":"2025-05","res":44,"adr":111.11},{"month":"2025-06","res":47,"adr":98.04},{"month":"2025-07","res":42,"adr":102.77},{"month":"2025-08","res":47,"adr":111.78},{"month":"2025-09","res":44,"adr":106.03},{"month":"2025-10","res":42,"adr":108.68},{"month":"2025-11","res":39,"adr":100.00},{"month":"2025-12","res":46,"adr":104.87},{"month":"2026-01","res":45,"adr":104.89},{"month":"2026-02","res":41,"adr":101.49},{"month":"2026-03","res":47,"adr":100.22},{"month":"2026-04","res":34,"adr":110.08}],
+    "P008":[{"month":"2024-04","res":64,"adr":108.49},{"month":"2024-05","res":62,"adr":102.59},{"month":"2024-06","res":65,"adr":108.24},{"month":"2024-07","res":66,"adr":104.83},{"month":"2024-08","res":67,"adr":100.56},{"month":"2024-09","res":65,"adr":106.99},{"month":"2024-10","res":64,"adr":97.54},{"month":"2024-11","res":64,"adr":100.44},{"month":"2024-12","res":62,"adr":108.10},{"month":"2025-01","res":69,"adr":107.69},{"month":"2025-02","res":55,"adr":104.72},{"month":"2025-03","res":60,"adr":108.12},{"month":"2025-04","res":75,"adr":103.78},{"month":"2025-05","res":64,"adr":98.52},{"month":"2025-06","res":59,"adr":104.63},{"month":"2025-07","res":67,"adr":99.87},{"month":"2025-08","res":74,"adr":108.26},{"month":"2025-09","res":61,"adr":103.22},{"month":"2025-10","res":73,"adr":102.46},{"month":"2025-11","res":68,"adr":103.88},{"month":"2025-12","res":74,"adr":102.36},{"month":"2026-01","res":68,"adr":105.34},{"month":"2026-02","res":59,"adr":103.10},{"month":"2026-03","res":66,"adr":107.85},{"month":"2026-04","res":53,"adr":104.93}],
+    "P009":[{"month":"2024-04","res":84,"adr":131.05},{"month":"2024-05","res":82,"adr":134.08},{"month":"2024-06","res":91,"adr":138.63},{"month":"2024-07","res":92,"adr":132.38},{"month":"2024-08","res":90,"adr":130.86},{"month":"2024-09","res":89,"adr":134.68},{"month":"2024-10","res":87,"adr":141.26},{"month":"2024-11","res":95,"adr":134.73},{"month":"2024-12","res":89,"adr":137.02},{"month":"2025-01","res":92,"adr":136.08},{"month":"2025-02","res":84,"adr":129.17},{"month":"2025-03","res":89,"adr":131.02},{"month":"2025-04","res":85,"adr":126.09},{"month":"2025-05","res":82,"adr":131.94},{"month":"2025-06","res":84,"adr":132.87},{"month":"2025-07","res":89,"adr":127.65},{"month":"2025-08","res":84,"adr":135.75},{"month":"2025-09","res":81,"adr":127.03},{"month":"2025-10","res":95,"adr":129.13},{"month":"2025-11","res":92,"adr":131.70},{"month":"2025-12","res":83,"adr":133.33},{"month":"2026-01","res":97,"adr":133.03},{"month":"2026-02","res":81,"adr":133.03},{"month":"2026-03","res":92,"adr":138.90},{"month":"2026-04","res":65,"adr":131.32}],
+    "P010":[{"month":"2024-04","res":90,"adr":71.74},{"month":"2024-05","res":91,"adr":72.36},{"month":"2024-06","res":85,"adr":77.16},{"month":"2024-07","res":75,"adr":73.06},{"month":"2024-08","res":92,"adr":76.66},{"month":"2024-09","res":83,"adr":77.26},{"month":"2024-10","res":90,"adr":74.43},{"month":"2024-11","res":88,"adr":75.07},{"month":"2024-12","res":89,"adr":76.72},{"month":"2025-01","res":83,"adr":73.32},{"month":"2025-02","res":72,"adr":74.80},{"month":"2025-03","res":90,"adr":76.34},{"month":"2025-04","res":90,"adr":74.39},{"month":"2025-05","res":90,"adr":76.93},{"month":"2025-06","res":95,"adr":73.96},{"month":"2025-07","res":88,"adr":70.67},{"month":"2025-08","res":89,"adr":74.02},{"month":"2025-09","res":81,"adr":77.15},{"month":"2025-10","res":89,"adr":72.13},{"month":"2025-11","res":90,"adr":74.91},{"month":"2025-12","res":91,"adr":75.49},{"month":"2026-01","res":89,"adr":77.11},{"month":"2026-02","res":77,"adr":76.34},{"month":"2026-03","res":91,"adr":74.34},{"month":"2026-04","res":65,"adr":80.01}]
+  },
+  "room_energy": {
+    "P001":[{"room":"0114","type":"DOUBLE","kwh":105},{"room":"0402","type":"DOUBLE","kwh":93.5},{"room":"0204","type":"KING","kwh":87.1},{"room":"0202","type":"DOUBLE","kwh":86.4},{"room":"0113","type":"DOUBLE","kwh":82.1},{"room":"0211","type":"DOUBLE","kwh":77.1},{"room":"0209","type":"DOUBLE","kwh":72.1},{"room":"0101","type":"DOUBLE","kwh":65},{"room":"0203","type":"DOUBLE","kwh":63.5},{"room":"0111","type":"DOUBLE","kwh":62.8}],
+    "P002":[{"room":"0303","type":"DOUBLE","kwh":76.2},{"room":"0212","type":"DOUBLE","kwh":75},{"room":"0217","type":"DOUBLE","kwh":74.4},{"room":"0220","type":"SUITE","kwh":73.2},{"room":"0216","type":"KING","kwh":69},{"room":"0307","type":"DOUBLE","kwh":66},{"room":"0214","type":"DOUBLE","kwh":63.1},{"room":"0302","type":"KING","kwh":60.1},{"room":"0215","type":"DOUBLE_QUEEN","kwh":59.5},{"room":"0219","type":"KING","kwh":56.5}],
+    "P003":[{"room":"0114","type":"DOUBLE","kwh":105.7},{"room":"0311","type":"KING","kwh":88.5},{"room":"0105","type":"DOUBLE_QUEEN","kwh":87.8},{"room":"0104","type":"DOUBLE","kwh":85},{"room":"0401","type":"DOUBLE","kwh":82.1},{"room":"0408","type":"DOUBLE","kwh":80.7},{"room":"0101","type":"DOUBLE","kwh":80},{"room":"0111","type":"DOUBLE","kwh":78.5},{"room":"0410","type":"SUITE","kwh":75.7},{"room":"0306","type":"DOUBLE","kwh":75.7}],
+    "P004":[{"room":"0204","type":"KING","kwh":103},{"room":"0210","type":"SUITE","kwh":101.2},{"room":"0311","type":"KING","kwh":101.2},{"room":"0203","type":"DOUBLE","kwh":97.7},{"room":"0202","type":"DOUBLE","kwh":93.2},{"room":"0109","type":"KING","kwh":89.6},{"room":"0206","type":"DOUBLE","kwh":88.7},{"room":"0309","type":"DOUBLE","kwh":88.7},{"room":"0102","type":"DOUBLE","kwh":86.9},{"room":"0105","type":"DOUBLE_QUEEN","kwh":86.9}],
+    "P005":[{"room":"0217","type":"DOUBLE","kwh":102.3},{"room":"0216","type":"KING","kwh":75.6},{"room":"0219","type":"KING","kwh":72},{"room":"0302","type":"KING","kwh":68.4},{"room":"0105","type":"DOUBLE_QUEEN","kwh":64.9},{"room":"0101","type":"DOUBLE","kwh":63.7},{"room":"0207","type":"KING","kwh":61.9},{"room":"0109","type":"KING","kwh":61.3},{"room":"0119","type":"DOUBLE","kwh":55.3},{"room":"0202","type":"DOUBLE","kwh":51.8}],
+    "P006":[{"room":"0218","type":"DOUBLE","kwh":98.8},{"room":"0205","type":"DOUBLE_QUEEN","kwh":76.2},{"room":"0101","type":"DOUBLE","kwh":76.2},{"room":"0409","type":"KING","kwh":74.4},{"room":"0320","type":"SUITE","kwh":70.2},{"room":"0407","type":"DOUBLE","kwh":67.8},{"room":"0307","type":"DOUBLE","kwh":66.6},{"room":"0405","type":"DOUBLE_QUEEN","kwh":61.3},{"room":"0420","type":"SUITE","kwh":58.3},{"room":"0207","type":"KING","kwh":56.5}],
+    "P007":[{"room":"0117","type":"DOUBLE","kwh":90.7},{"room":"0212","type":"DOUBLE","kwh":88.5},{"room":"0110","type":"SUITE","kwh":86.4},{"room":"0208","type":"DOUBLE","kwh":73.5},{"room":"0106","type":"KING","kwh":66.4},{"room":"0209","type":"DOUBLE","kwh":61.4},{"room":"0103","type":"KING","kwh":54.3},{"room":"0216","type":"KING","kwh":50.7}],
+    "P008":[{"room":"0206","type":"DOUBLE","kwh":92.1},{"room":"0204","type":"KING","kwh":91.4},{"room":"0110","type":"SUITE","kwh":90.7},{"room":"0102","type":"DOUBLE","kwh":80.7},{"room":"0212","type":"DOUBLE","kwh":77.8},{"room":"0112","type":"KING","kwh":68.5},{"room":"0113","type":"DOUBLE","kwh":66.4},{"room":"0106","type":"KING","kwh":65},{"room":"0109","type":"KING","kwh":58.5},{"room":"0217","type":"DOUBLE","kwh":57.8}],
+    "P009":[{"room":"0403","type":"KING","kwh":112},{"room":"0109","type":"KING","kwh":111.1},{"room":"0304","type":"DOUBLE","kwh":107.5},{"room":"0319","type":"DOUBLE","kwh":102.1},{"room":"0405","type":"DOUBLE_QUEEN","kwh":96.8},{"room":"0301","type":"DOUBLE","kwh":95},{"room":"0407","type":"DOUBLE","kwh":93.2},{"room":"0215","type":"DOUBLE_QUEEN","kwh":87.8},{"room":"0116","type":"DOUBLE","kwh":78},{"room":"0312","type":"DOUBLE","kwh":77.1}],
+    "P010":[{"room":"0201","type":"KING","kwh":76.8},{"room":"0110","type":"SUITE","kwh":75.6},{"room":"0310","type":"SUITE","kwh":73.8},{"room":"0202","type":"DOUBLE","kwh":72},{"room":"0103","type":"KING","kwh":67.2},{"room":"0117","type":"DOUBLE","kwh":60.1},{"room":"0217","type":"DOUBLE","kwh":58.9},{"room":"0109","type":"KING","kwh":51.8},{"room":"0206","type":"DOUBLE","kwh":50},{"room":"0120","type":"SUITE","kwh":46.4}]
+  }
+};
+
+const DOMAINS = [
+  { id: 'ops', name: 'Operations & Front Desk', features: [
+    { id: 'f01', name: 'F-01 Reservation Dashboard' },
+    { id: 'f02', name: 'F-02 Check-In/Check-Out' },
+    { id: 'f03', name: 'F-03 Housekeeping' },
+    { id: 'f04', name: 'F-04 Dynamic Pricing' }
+  ]},
+  { id: 'rev', name: 'Revenue & Financial', features: [
+    { id: 'f05', name: 'F-05 OTA Fee Analyzer' },
+    { id: 'f06', name: 'F-06 Direct Booking Funnel' },
+    { id: 'f07', name: 'F-07 Expense & Cash Flow' },
+    { id: 'f08', name: 'F-08 Franchise vs Independent ROI' }
+  ]},
+  { id: 'guest', name: 'Guest Experience & CRM', features: [
+    { id: 'f09', name: 'F-09 Guest Messaging' },
+    { id: 'f10', name: 'F-10 Reputation Management' },
+    { id: 'f11', name: 'F-11 Guest History & CRM' }
+  ]},
+  { id: 'ai', name: 'Predictive & AI', features: [
+    { id: 'f12', name: 'F-12 No-Show Predictor' },
+    { id: 'f13', name: 'F-13 Demand Forecasting' },
+    { id: 'f14', name: 'F-14 Maintenance Prediction' },
+    { id: 'f15', name: 'F-15 Energy Optimization' }
+  ]},
+  { id: 'compliance', name: 'Compliance & Risk', features: [
+    { id: 'f16', name: 'F-16 Compliance Tracker' },
+    { id: 'f17', name: 'F-17 Extended Stay Mgmt' },
+    { id: 'f18', name: 'F-18 Insurance Claims' }
+  ]},
+  { id: 'community', name: 'Community & Network', features: [
+    { id: 'f19', name: 'F-19 Owner Benchmarking' },
+    { id: 'f20', name: 'F-20 Group Purchasing Co-op' }
+  ]}
+];
+
+let currentProperty = 'P001';
+let currentDomain = 'ops';
+let currentFeature = 'f01';
+let charts = {};
+
+function fmt(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+function fmtUSD(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function destroyCharts() {
+  Object.values(charts).forEach(c => { if (c) c.destroy(); });
+  charts = {};
+}
+
+function initPropertySelector() {
+  const sel = document.getElementById('propSelect');
+  window.DATA.properties.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} (${p.city}, ${p.state}) - ${p.rooms} rooms - ${p.class}`;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => {
+    currentProperty = sel.value;
+    renderCurrentView();
+  });
+}
+
+function initDomainTabs() {
+  const container = document.getElementById('domainTabs');
+  DOMAINS.forEach(d => {
+    const tab = document.createElement('div');
+    tab.className = 'domain-tab' + (d.id === currentDomain ? ' active' : '');
+    tab.textContent = d.name;
+    tab.dataset.domain = d.id;
+    tab.addEventListener('click', () => {
+      currentDomain = d.id;
+      currentFeature = DOMAINS.find(x => x.id === d.id).features[0].id;
+      renderDomainTabs();
+      renderFeatureTabs();
+      renderCurrentView();
+    });
+    container.appendChild(tab);
+  });
+}
+
+function renderDomainTabs() {
+  document.querySelectorAll('.domain-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.domain === currentDomain);
+  });
+}
+
+function renderFeatureTabs() {
+  const container = document.getElementById('featureTabs');
+  container.innerHTML = '';
+  const domain = DOMAINS.find(d => d.id === currentDomain);
+  domain.features.forEach(f => {
+    const tab = document.createElement('div');
+    tab.className = 'feature-tab' + (f.id === currentFeature ? ' active' : '');
+    tab.textContent = f.name;
+    tab.dataset.feature = f.id;
+    tab.addEventListener('click', () => {
+      currentFeature = f.id;
+      renderFeatureTabs();
+      renderCurrentView();
+    });
+    container.appendChild(tab);
+  });
+}
+
+function renderCurrentView() {
+  destroyCharts();
+  const content = document.getElementById('mainContent');
+  const renderers = {
+    f01: renderF01, f02: renderF02, f03: renderF03, f04: renderF04,
+    f05: renderF05, f06: renderF06, f07: renderF07, f08: renderF08,
+    f09: renderF09, f10: renderF10, f11: renderF11,
+    f12: renderF12, f13: renderF13, f14: renderF14, f15: renderF15,
+    f16: renderF16, f17: renderF17, f18: renderF18,
+    f19: renderF19, f20: renderF20
+  };
+  if (renderers[currentFeature]) {
+    content.innerHTML = '';
+    renderers[currentFeature](content);
+  }
+}
+
+function renderF01(container) {
+  const data = window.DATA.channel_mix[currentProperty];
+  const totalRes = data.reduce((s, d) => s + d.count, 0);
+  const avgRate = data.reduce((s, d) => s + d.avg_rev * d.count, 0) / totalRes;
+  const topChannel = data[0].channel;
+  const totalRev = data.reduce((s, d) => s + d.avg_rev * d.count, 0);
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${fmt(totalRes)}</div><div class="label">Total Reservations</div></div>
+      <div class="metric-card"><div class="value">${fmtUSD(avgRate)}</div><div class="label">Avg Rate</div></div>
+      <div class="metric-card"><div class="value">${topChannel}</div><div class="label">Top Channel</div></div>
+      <div class="metric-card"><div class="value">${fmtUSD(totalRev)}</div><div class="label">Est. Gross Revenue</div></div>
+    </div>
+    <div class="chart-container"><h3>Reservations by Channel</h3><div class="chart-wrap"><canvas id="chartF01"></canvas></div></div>
+    <div class="table-wrap"><h3>Channel Mix Details</h3>
+      <table><thead><tr><th>Channel</th><th>Reservations</th><th>Avg Revenue</th><th>% of Total</th></tr></thead>
+      <tbody>${data.map(d => `<tr><td>${d.channel}</td><td>${fmt(d.count)}</td><td>${fmtUSD(d.avg_rev)}</td><td>${(d.count/totalRes*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table>
+    </div>`;
+
+  charts.f01 = new Chart(document.getElementById('chartF01'), {
+    type: 'bar',
+    data: { labels: data.map(d => d.channel), datasets: [{ label: 'Reservations', data: data.map(d => d.count), backgroundColor: '#1f77b4' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+function renderF02(container) {
+  const data = window.DATA.channel_mix[currentProperty];
+  const totalRes = data.reduce((s, d) => s + d.count, 0);
+  const avgStay = 1.8;
+  const arrivals = Math.round(totalRes / 365 * 30);
+  const departures = Math.round(arrivals * 0.92);
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${arrivals}</div><div class="label">Est. Arrivals (30d)</div></div>
+      <div class="metric-card"><div class="value">${departures}</div><div class="label">Est. Departures (30d)</div></div>
+      <div class="metric-card"><div class="value">${avgStay}</div><div class="label">Avg Stay (nights)</div></div>
+      <div class="metric-card"><div class="value">${Math.round(arrivals * 0.15)}</div><div class="label">Early Check-ins</div></div>
+    </div>
+    <div class="placeholder-panel">
+      <h3>Check-In / Check-Out Management</h3>
+      <p>This module provides real-time tracking of guest arrivals and departures, early check-in requests, late check-out management, and room assignment optimization. Integration with the PMS allows automated room status updates and guest communication.</p>
+    </div>`;
+}
+
+function renderF03(container) {
+  const data = window.DATA.housekeeping[currentProperty];
+  const total = data.reduce((s, d) => s + d.cnt, 0);
+  const colors = { COMPLETED: '#28a745', IN_PROGRESS: '#ffc107', INSPECT: '#17a2b8', PENDING: '#dc3545' };
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      ${data.map(d => `<div class="metric-card"><div class="value">${fmt(d.cnt)}</div><div class="label">${d.status}</div></div>`).join('')}
+    </div>
+    <div class="two-col">
+      <div class="chart-container"><h3>Task Status Distribution</h3><div class="chart-wrap"><canvas id="chartF03"></canvas></div></div>
+      <div class="table-wrap"><h3>Housekeeping Summary</h3>
+        <table><thead><tr><th>Status</th><th>Count</th><th>% of Total</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.status}</td><td>${fmt(d.cnt)}</td><td>${(d.cnt/total*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`;
+
+  charts.f03 = new Chart(document.getElementById('chartF03'), {
+    type: 'doughnut',
+    data: { labels: data.map(d => d.status), datasets: [{ data: data.map(d => d.cnt), backgroundColor: data.map(d => colors[d.status] || '#999') }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+function renderF04(container) {
+  container.innerHTML = `
+    <div class="placeholder-panel">
+      <h3>Dynamic Pricing Engine</h3>
+      <p>The AI-powered dynamic pricing module analyzes demand patterns, competitor rates, local events, and historical occupancy to generate real-time pricing recommendations. It considers day-of-week patterns, seasonality, booking lead time, and channel-specific optimization to maximize RevPAR while maintaining competitive positioning.</p>
+      <p style="margin-top:12px;color:#888;">Features include: rate recommendations by room type, minimum stay requirements, last-minute discounts, advance purchase rates, and competitor rate monitoring.</p>
+    </div>`;
+}
+
+function renderF05(container) {
+  const data = window.DATA.revenue_by_channel[currentProperty];
+  const totalGross = data.reduce((s, d) => s + d.gross, 0);
+  const totalFees = data.reduce((s, d) => s + d.fees, 0);
+  const totalNet = data.reduce((s, d) => s + d.net, 0);
+  const totalBookings = data.reduce((s, d) => s + d.bookings, 0);
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${fmtUSD(totalGross)}</div><div class="label">Gross Revenue</div></div>
+      <div class="metric-card"><div class="value">${fmtUSD(totalFees)}</div><div class="label">Total OTA Fees</div></div>
+      <div class="metric-card"><div class="value">${fmtUSD(totalNet)}</div><div class="label">Net Revenue</div></div>
+      <div class="metric-card"><div class="value">${(totalFees/totalGross*100).toFixed(1)}%</div><div class="label">Fee Ratio</div></div>
+    </div>
+    <div class="chart-container"><h3>Gross vs Net Revenue by Channel</h3><div class="chart-wrap"><canvas id="chartF05"></canvas></div></div>
+    <div class="two-col">
+      <div class="table-wrap"><h3>Revenue Breakdown</h3>
+        <table><thead><tr><th>Channel</th><th>Bookings</th><th>Gross</th><th>Fees</th><th>Net</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.channel}</td><td>${d.bookings}</td><td>${fmtUSD(d.gross)}</td><td>${fmtUSD(d.fees)}</td><td>${fmtUSD(d.net)}</td></tr>`).join('')}</tbody></table>
+      </div>
+      <div class="table-wrap"><h3>OTA Fee Schedule</h3>
+        <table><thead><tr><th>Channel</th><th>Year</th><th>Commission</th><th>CC Fee</th><th>Base Fee</th></tr></thead>
+        <tbody>${window.DATA.ota_fees.map(d => `<tr><td>${d.channel}</td><td>${d.year}</td><td>${(d.commission*100).toFixed(1)}%</td><td>${(d.cc_fee*100).toFixed(1)}%</td><td>${d.base_fee ? fmtUSD(d.base_fee) : '-'}</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`;
+
+  charts.f05 = new Chart(document.getElementById('chartF05'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.channel),
+      datasets: [
+        { label: 'Gross Revenue', data: data.map(d => d.gross), backgroundColor: '#1f77b4' },
+        { label: 'Net Revenue', data: data.map(d => d.net), backgroundColor: '#2ca02c' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+function renderF06(container) {
+  const data = window.DATA.direct_booking_pct[currentProperty];
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${data.length > 0 ? data[data.length-1].pct + '%' : 'N/A'}</div><div class="label">Latest Direct %</div></div>
+      <div class="metric-card"><div class="value">${data.length > 0 ? (data.reduce((s,d) => s+d.pct, 0)/data.length).toFixed(1) + '%' : 'N/A'}</div><div class="label">Avg Direct %</div></div>
+      <div class="metric-card"><div class="value">${data.length}</div><div class="label">Data Points</div></div>
+      <div class="metric-card"><div class="value">${data.length > 1 ? ((data[data.length-1].pct - data[0].pct) > 0 ? '+' : '') + (data[data.length-1].pct - data[0].pct).toFixed(1) + 'pp' : 'N/A'}</div><div class="label">Trend</div></div>
+    </div>
+    <div class="chart-container"><h3>Direct Booking % Over Time</h3><div class="chart-wrap"><canvas id="chartF06"></canvas></div></div>`;
+
+  charts.f06 = new Chart(document.getElementById('chartF06'), {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.month),
+      datasets: [{ label: 'Direct Booking %', data: data.map(d => d.pct), borderColor: '#1f77b4', backgroundColor: 'rgba(31,119,180,0.1)', fill: true, tension: 0.3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, title: { display: true, text: '%' } } }, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderF07(container) {
+  const data = window.DATA.expenses[currentProperty];
+  const total = data.reduce((s, d) => s + d.spend, 0);
+  const colors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22'];
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${fmtUSD(total)}</div><div class="label">Total Expenses</div></div>
+      <div class="metric-card"><div class="value">${data.length}</div><div class="label">Categories</div></div>
+      <div class="metric-card"><div class="value">${fmtUSD(data[0].spend)}</div><div class="label">Largest (${data[0].category})</div></div>
+      <div class="metric-card"><div class="value">${(data[0].spend/total*100).toFixed(1)}%</div><div class="label">Top Category %</div></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-container"><h3>Expense Distribution</h3><div class="chart-wrap"><canvas id="chartF07"></canvas></div></div>
+      <div class="table-wrap"><h3>Expense Details</h3>
+        <table><thead><tr><th>Category</th><th>Amount</th><th>% of Total</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.category}</td><td>${fmtUSD(d.spend)}</td><td>${(d.spend/total*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`;
+
+  charts.f07 = new Chart(document.getElementById('chartF07'), {
+    type: 'pie',
+    data: { labels: data.map(d => d.category), datasets: [{ data: data.map(d => d.spend), backgroundColor: colors.slice(0, data.length) }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+  });
+}
+
+function renderF08(container) {
+  const prop = window.DATA.properties.find(p => p.id === currentProperty);
+  container.innerHTML = `
+    <div class="calculator">
+      <h3>Franchise vs Independent ROI Calculator</h3>
+      <div class="calc-grid">
+        <div class="calc-inputs">
+          <label>Rooms: <span id="calcRoomsVal">${prop.rooms}</span><input type="range" id="calcRooms" min="20" max="120" value="${prop.rooms}"></label>
+          <label>ADR ($): <span id="calcADRVal">95</span><input type="range" id="calcADR" min="50" max="200" value="95"></label>
+          <label>Occupancy (%): <span id="calcOccVal">70</span><input type="range" id="calcOcc" min="40" max="95" value="70"></label>
+          <label>Franchise Fee (%): <span id="calcFeeVal">6</span><input type="range" id="calcFee" min="4" max="8" step="0.5" value="6"></label>
+        </div>
+        <div class="calc-results" id="calcResults"></div>
+      </div>
+    </div>`;
+
+  function updateCalc() {
+    const rooms = +document.getElementById('calcRooms').value;
+    const adr = +document.getElementById('calcADR').value;
+    const occ = +document.getElementById('calcOcc').value / 100;
+    const fee = +document.getElementById('calcFee').value / 100;
+
+    document.getElementById('calcRoomsVal').textContent = rooms;
+    document.getElementById('calcADRVal').textContent = adr;
+    document.getElementById('calcOccVal').textContent = document.getElementById('calcOcc').value;
+    document.getElementById('calcFeeVal').textContent = document.getElementById('calcFee').value;
+
+    const annualRevenue = rooms * adr * occ * 365;
+    const franchiseCost = annualRevenue * fee;
+    const indMarketing = annualRevenue * 0.04;
+    const indNet = annualRevenue - indMarketing;
+    const franNet = annualRevenue - franchiseCost;
+    const diff = indNet - franNet;
+
+    document.getElementById('calcResults').innerHTML = `
+      <div style="font-size:13px;color:#666;margin-bottom:8px;">Annual Room Revenue: <strong>${fmtUSD(annualRevenue)}</strong></div>
+      <div class="calc-result-card independent">
+        <div class="lbl">Independent Net Revenue</div>
+        <div class="val" style="color:#1f77b4;">${fmtUSD(indNet)}</div>
+        <div class="lbl">Marketing cost: ${fmtUSD(indMarketing)} (4%)</div>
+      </div>
+      <div class="calc-result-card franchise">
+        <div class="lbl">Franchise Net Revenue</div>
+        <div class="val" style="color:#e67e22;">${fmtUSD(franNet)}</div>
+        <div class="lbl">Franchise fee: ${fmtUSD(franchiseCost)} (${(fee*100).toFixed(1)}%)</div>
+      </div>
+      <div style="text-align:center;padding:12px;font-size:14px;font-weight:600;color:${diff > 0 ? '#28a745' : '#dc3545'}">
+        Independent ${diff > 0 ? 'saves' : 'costs'} ${fmtUSD(Math.abs(diff))} /year
+      </div>`;
+  }
+
+  ['calcRooms','calcADR','calcOcc','calcFee'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateCalc);
+  });
+  updateCalc();
+}
+
+function renderF09(container) {
+  const data = window.DATA.guest_intents[currentProperty];
+  const totalMsgs = data.reduce((s, d) => s + d.cnt, 0);
+  const avgAuto = data.reduce((s, d) => s + d.auto_rate * d.cnt, 0) / totalMsgs;
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${fmt(totalMsgs)}</div><div class="label">Total Messages</div></div>
+      <div class="metric-card"><div class="value">${avgAuto.toFixed(1)}%</div><div class="label">Avg Auto-Response Rate</div></div>
+      <div class="metric-card"><div class="value">${data[0].intent.replace(/_/g,' ')}</div><div class="label">Top Intent</div></div>
+      <div class="metric-card"><div class="value">${data.length}</div><div class="label">Intent Categories</div></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-container"><h3>Message Volume by Intent</h3><div class="chart-wrap"><canvas id="chartF09"></canvas></div></div>
+      <div class="table-wrap"><h3>Intent Details</h3>
+        <table><thead><tr><th>Intent</th><th>Count</th><th>Auto-Response %</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.intent.replace(/_/g,' ')}</td><td>${d.cnt}</td><td>${d.auto_rate}%</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`;
+
+  charts.f09 = new Chart(document.getElementById('chartF09'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.intent.replace(/_/g,' ')),
+      datasets: [
+        { label: 'Messages', data: data.map(d => d.cnt), backgroundColor: '#1f77b4' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+  });
+}
+
+function renderF10(container) {
+  const data = window.DATA.reviews[currentProperty];
+  const totalReviews = data.reduce((s, d) => s + d.count, 0);
+  const avgRating = data.reduce((s, d) => s + d.avg_rating * d.count, 0) / totalReviews;
+  const avgSentiment = data.reduce((s, d) => s + d.sentiment * d.count, 0) / totalReviews;
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${totalReviews}</div><div class="label">Total Reviews</div></div>
+      <div class="metric-card"><div class="value">${avgRating.toFixed(2)}</div><div class="label">Avg Rating</div></div>
+      <div class="metric-card"><div class="value">${(avgSentiment*100).toFixed(1)}%</div><div class="label">Sentiment Score</div></div>
+      <div class="metric-card"><div class="value">${data.length}</div><div class="label">Platforms</div></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-container"><h3>Average Rating by Platform</h3><div class="chart-wrap"><canvas id="chartF10"></canvas></div></div>
+      <div class="table-wrap"><h3>Review Details</h3>
+        <table><thead><tr><th>Platform</th><th>Reviews</th><th>Avg Rating</th><th>Sentiment</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.platform}</td><td>${d.count}</td><td>${d.avg_rating.toFixed(2)}</td><td>${(d.sentiment*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`;
+
+  charts.f10 = new Chart(document.getElementById('chartF10'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.platform),
+      datasets: [{ label: 'Avg Rating', data: data.map(d => d.avg_rating), backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0'] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, min: 3, max: 5 } }, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderF11(container) {
+  const data = window.DATA.loyalty_tiers[currentProperty];
+  const total = data.reduce((s, d) => s + d.cnt, 0);
+  const colors = { VIP: '#ffd700', REGULAR: '#1f77b4', RETURNING: '#2ca02c', FIRST_VISIT: '#ff7f0e' };
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${fmt(total)}</div><div class="label">Total Guests</div></div>
+      ${data.map(d => `<div class="metric-card"><div class="value">${fmt(d.cnt)}</div><div class="label">${d.tier}</div></div>`).join('')}
+    </div>
+    <div class="two-col">
+      <div class="chart-container"><h3>Loyalty Tier Distribution</h3><div class="chart-wrap"><canvas id="chartF11"></canvas></div></div>
+      <div class="table-wrap"><h3>Tier Breakdown</h3>
+        <table><thead><tr><th>Tier</th><th>Guests</th><th>% of Total</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.tier}</td><td>${fmt(d.cnt)}</td><td>${(d.cnt/total*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`;
+
+  charts.f11 = new Chart(document.getElementById('chartF11'), {
+    type: 'doughnut',
+    data: { labels: data.map(d => d.tier), datasets: [{ data: data.map(d => d.cnt), backgroundColor: data.map(d => colors[d.tier] || '#999') }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+function renderF12(container) {
+  const summary = window.DATA.noshow_summary[currentProperty];
+  const byDay = window.DATA.noshow_by_day[currentProperty];
+  const risk = window.DATA.noshow_risk[currentProperty];
+
+  container.innerHTML = `
+    <h2 style="margin-bottom:8px">No-Show Predictor</h2>
+    <p style="color:#666;margin-bottom:20px;font-size:13px">ML Classification model features — scoring upcoming arrivals</p>
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${summary.total.toLocaleString()}</div><div class="label">Total Reservations</div></div>
+      <div class="metric-card"><div class="value">${summary.no_shows}</div><div class="label">No-Shows</div></div>
+      <div class="metric-card"><div class="value">${summary.rate}%</div><div class="label">No-Show Rate</div></div>
+    </div>
+    <div class="table-wrap"><h3>No-Show Risk Factors (Training Features)</h3>
+      <table><thead><tr><th>Source Channel</th><th>Cancellation Policy</th><th>Reservations</th><th>No-Show Rate %</th></tr></thead>
+      <tbody>${risk.map(r => `<tr><td>${r.channel}</td><td>${r.policy}</td><td>${r.reservations}</td><td style="font-weight:600;color:${r.rate>=8?'#dc3545':r.rate>=6?'#fd7e14':'#333'}">${r.rate}%</td></tr>`).join('')}</tbody></table>
+    </div>
+    <div class="chart-container"><h3>No-Show Rate by Day of Week</h3><div class="chart-wrap"><canvas id="chartF12"></canvas></div></div>`;
+
+  charts.f12 = new Chart(document.getElementById('chartF12'), {
+    type: 'bar',
+    data: {
+      labels: byDay.map(d => d.day),
+      datasets: [{ label: 'No-Show Rate %', data: byDay.map(d => d.rate), backgroundColor: '#e74c3c', borderRadius: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'No-Show Rate %' } } }, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderF13(container) {
+  const data = window.DATA.demand_forecast[currentProperty];
+  const avgRes = (data.reduce((s,d) => s + d.res, 0) / data.length).toFixed(0);
+  const avgAdr = (data.reduce((s,d) => s + d.adr, 0) / data.length).toFixed(2);
+
+  container.innerHTML = `
+    <h2 style="margin-bottom:8px">Demand Forecasting</h2>
+    <p style="color:#666;margin-bottom:20px;font-size:13px">Occupancy & ADR time series for ML FORECAST</p>
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${avgRes}</div><div class="label">Avg Monthly Reservations</div></div>
+      <div class="metric-card"><div class="value">$${avgAdr}</div><div class="label">Avg ADR</div></div>
+      <div class="metric-card"><div class="value">${data.length}</div><div class="label">Data Points (Months)</div></div>
+    </div>
+    <div class="chart-container"><h3>Monthly Reservations Over Time</h3><div class="chart-wrap"><canvas id="chartF13a"></canvas></div></div>
+    <div class="chart-container"><h3>Average Daily Rate Over Time</h3><div class="chart-wrap"><canvas id="chartF13b"></canvas></div></div>
+    <div class="table-wrap"><h3>Seasonal Patterns</h3>
+      <table><thead><tr><th>Month</th><th>Reservations</th><th>ADR ($)</th></tr></thead>
+      <tbody>${data.slice(-12).map(d => `<tr><td>${d.month}</td><td>${d.res}</td><td>$${d.adr.toFixed(2)}</td></tr>`).join('')}</tbody></table>
+    </div>`;
+
+  charts.f13a = new Chart(document.getElementById('chartF13a'), {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.month),
+      datasets: [{ label: 'Reservations', data: data.map(d => d.res), borderColor: '#1f77b4', backgroundColor: 'rgba(31,119,180,0.1)', fill: true, tension: 0.3, pointRadius: 2 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, title: { display: true, text: 'Reservations' } } }, plugins: { legend: { display: false } } }
+  });
+
+  charts.f13b = new Chart(document.getElementById('chartF13b'), {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.month),
+      datasets: [{ label: 'ADR ($)', data: data.map(d => d.adr), borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', fill: true, tension: 0.3, pointRadius: 2 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, title: { display: true, text: 'ADR ($)' } } }, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderF14(container) {
+  const data = window.DATA.asset_health[currentProperty];
+  const totalAssets = data.reduce((s, d) => s + d.cnt, 0);
+  const totalAtRisk = data.reduce((s, d) => s + d.at_risk, 0);
+  const avgHealth = data.reduce((s, d) => s + d.avg_health * d.cnt, 0) / totalAssets;
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${totalAssets}</div><div class="label">Total Assets</div></div>
+      <div class="metric-card"><div class="value">${avgHealth.toFixed(1)}%</div><div class="label">Avg Health Score</div></div>
+      <div class="metric-card"><div class="value" style="color:#dc3545">${totalAtRisk}</div><div class="label">At-Risk Units</div></div>
+      <div class="metric-card"><div class="value">${(totalAtRisk/totalAssets*100).toFixed(1)}%</div><div class="label">At-Risk %</div></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-container"><h3>Average Health Score by Asset Type</h3><div class="chart-wrap"><canvas id="chartF14"></canvas></div></div>
+      <div class="table-wrap"><h3>Asset Health Details</h3>
+        <table><thead><tr><th>Type</th><th>Count</th><th>Avg Health</th><th>At-Risk</th><th>Risk %</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.type}</td><td>${d.cnt}</td><td>${d.avg_health.toFixed(1)}%</td><td style="color:#dc3545;font-weight:600">${d.at_risk}</td><td>${(d.at_risk/d.cnt*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`;
+
+  charts.f14 = new Chart(document.getElementById('chartF14'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.type),
+      datasets: [
+        { label: 'Avg Health %', data: data.map(d => d.avg_health), backgroundColor: data.map(d => d.avg_health >= 70 ? '#28a745' : d.avg_health >= 60 ? '#ffc107' : '#dc3545') }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, min: 40, max: 100 } }, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderF15(container) {
+  const roomData = window.DATA.room_energy[currentProperty];
+  const avgKwh = (roomData.reduce((s,d) => s + d.kwh, 0) / roomData.length).toFixed(1);
+  const peakKwh = Math.max(...roomData.map(d => d.kwh)).toFixed(1);
+  const roomsReporting = roomData.length;
+  const totalKwh = roomData.reduce((s,d) => s + d.kwh, 0).toFixed(1);
+  const avgAll = roomData.reduce((s,d) => s + d.kwh, 0) / roomData.length;
+  const anomalies = roomData.filter(d => d.kwh > avgAll * 1.5);
+
+  container.innerHTML = `
+    <h2 style="margin-bottom:8px">Energy Optimization AI</h2>
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${totalKwh}</div><div class="label">Total Weekly kWh</div></div>
+      <div class="metric-card"><div class="value">${peakKwh}</div><div class="label">Peak Room kWh</div></div>
+      <div class="metric-card"><div class="value">${roomsReporting}</div><div class="label">Rooms Reporting</div></div>
+    </div>
+    <div class="chart-container"><h3>Room-Level Energy Consumption (Recent Week)</h3><div class="chart-wrap"><canvas id="chartF15"></canvas></div></div>
+    <div class="table-wrap"><h3>Room-Level Energy Comparison (Recent Week)</h3>
+      <table><thead><tr><th>Room</th><th>Type</th><th>kWh Consumed</th><th>vs Avg %</th></tr></thead>
+      <tbody>${roomData.map(d => { const vsPct = ((d.kwh / avgAll) * 100).toFixed(0); return `<tr><td>${d.room}</td><td>${d.type}</td><td>${d.kwh}</td><td style="font-weight:600;color:${vsPct>130?'#dc3545':vsPct>110?'#fd7e14':'#28a745'}">${vsPct}%</td></tr>`; }).join('')}</tbody></table>
+    </div>
+    <div class="table-wrap"><h3>Energy Anomalies (Rooms Consuming >150% of Average)</h3>
+      ${anomalies.length > 0 ? `<table><thead><tr><th>Room</th><th>Type</th><th>kWh</th><th>vs Avg</th></tr></thead><tbody>${anomalies.map(d => `<tr><td>${d.room}</td><td>${d.type}</td><td>${d.kwh}</td><td style="color:#dc3545;font-weight:600">${((d.kwh/avgAll)*100).toFixed(0)}%</td></tr>`).join('')}</tbody></table>` : '<p style="color:#28a745;padding:12px;background:#d4edda;border-radius:6px;">No rooms significantly above average consumption.</p>'}
+    </div>`;
+
+  charts.f15 = new Chart(document.getElementById('chartF15'), {
+    type: 'bar',
+    data: {
+      labels: roomData.map(d => d.room),
+      datasets: [{ label: 'kWh Consumed', data: roomData.map(d => d.kwh), backgroundColor: roomData.map(d => d.kwh > avgAll * 1.3 ? '#dc3545' : d.kwh > avgAll ? '#ffc107' : '#1f77b4'), borderRadius: 3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'kWh' } } }, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderF16(container) {
+  const data = window.DATA.compliance[currentProperty];
+  const total = data.CURRENT + data.DUE_SOON + data.OVERDUE;
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value" style="color:#28a745">${data.CURRENT}</div><div class="label">Current</div></div>
+      <div class="metric-card"><div class="value" style="color:#ffc107">${data.DUE_SOON}</div><div class="label">Due Soon</div></div>
+      <div class="metric-card"><div class="value" style="color:#dc3545">${data.OVERDUE}</div><div class="label">Overdue</div></div>
+      <div class="metric-card"><div class="value">${total}</div><div class="label">Total Items</div></div>
+    </div>
+    <div class="chart-container"><h3>Compliance Status Overview</h3><div class="chart-wrap"><canvas id="chartF16"></canvas></div></div>
+    <div class="table-wrap"><h3>Status Breakdown</h3>
+      <table><thead><tr><th>Status</th><th>Count</th><th>Indicator</th></tr></thead>
+      <tbody>
+        <tr><td>CURRENT</td><td>${data.CURRENT}</td><td><span class="status-badge status-current">OK</span></td></tr>
+        <tr><td>DUE SOON</td><td>${data.DUE_SOON}</td><td><span class="status-badge status-due">ATTENTION</span></td></tr>
+        <tr><td>OVERDUE</td><td>${data.OVERDUE}</td><td><span class="status-badge status-overdue">ACTION REQUIRED</span></td></tr>
+      </tbody></table>
+    </div>`;
+
+  charts.f16 = new Chart(document.getElementById('chartF16'), {
+    type: 'bar',
+    data: {
+      labels: ['CURRENT', 'DUE SOON', 'OVERDUE'],
+      datasets: [{ data: [data.CURRENT, data.DUE_SOON, data.OVERDUE], backgroundColor: ['#28a745', '#ffc107', '#dc3545'] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+}
+
+function renderF17(container) {
+  const data = window.DATA.extended_stay[currentProperty];
+  const total = data.reduce((s, d) => s + d.cnt, 0);
+  const statusColors = { ACTIVE: '#28a745', DEPARTED: '#6c757d', NOTICE_GIVEN: '#ffc107', EVICTION: '#dc3545' };
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${total}</div><div class="label">Total Agreements</div></div>
+      ${data.map(d => `<div class="metric-card"><div class="value">${d.cnt}</div><div class="label">${d.status.replace(/_/g,' ')}</div></div>`).join('')}
+    </div>
+    <div class="two-col">
+      <div class="chart-container"><h3>Extended Stay Status</h3><div class="chart-wrap"><canvas id="chartF17"></canvas></div></div>
+      <div class="table-wrap"><h3>Agreement Details</h3>
+        <table><thead><tr><th>Status</th><th>Count</th><th>% of Total</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.status.replace(/_/g,' ')}</td><td>${d.cnt}</td><td>${(d.cnt/total*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>`;
+
+  charts.f17 = new Chart(document.getElementById('chartF17'), {
+    type: 'doughnut',
+    data: { labels: data.map(d => d.status.replace(/_/g,' ')), datasets: [{ data: data.map(d => d.cnt), backgroundColor: data.map(d => statusColors[d.status] || '#999') }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+function renderF18(container) {
+  const extData = window.DATA.extended_stay[currentProperty];
+  const evictions = extData.find(d => d.status === 'EVICTION');
+  const incidentCount = evictions ? evictions.cnt + 3 : 4;
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${incidentCount}</div><div class="label">Open Claims</div></div>
+      <div class="metric-card"><div class="value">2</div><div class="label">Pending Review</div></div>
+      <div class="metric-card"><div class="value">$12,450</div><div class="label">Est. Exposure</div></div>
+    </div>
+    <div class="placeholder-panel">
+      <h3>Insurance & Claims Management</h3>
+      <p>This module tracks property damage incidents, guest injury reports, liability claims, and insurance policy status. It integrates with the maintenance system to correlate asset failures with potential claims and provides documentation workflows for efficient claims processing.</p>
+      <p style="margin-top:12px;color:#888;">Features: incident reporting, photo documentation, adjuster communication, policy renewal tracking, premium optimization analysis.</p>
+    </div>`;
+}
+
+function renderF19(container) {
+  const data = window.DATA.benchmarking[currentProperty];
+  const metricLabels = {
+    adr_usd: 'ADR ($)', direct_booking_pct: 'Direct Booking %', energy_cost_per_room: 'Energy $/Room',
+    expense_per_room_usd: 'Expense $/Room', labor_cost_pct: 'Labor Cost %',
+    occupancy_pct: 'Occupancy %', review_score_avg: 'Review Score', revpar_usd: 'RevPAR ($)'
+  };
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${data.length}</div><div class="label">Metrics Tracked</div></div>
+      <div class="metric-card"><div class="value">${data.filter(d => d.my_value >= d.p75).length}</div><div class="label">Above P75</div></div>
+      <div class="metric-card"><div class="value">${data.filter(d => d.my_value < d.p25).length}</div><div class="label">Below P25</div></div>
+    </div>
+    <div class="chart-container"><h3>My Property vs Cohort Benchmarks</h3><div class="chart-wrap"><canvas id="chartF19"></canvas></div></div>
+    <div class="table-wrap"><h3>Benchmark Details</h3>
+      <table><thead><tr><th>Metric</th><th>My Value</th><th>P25</th><th>Median</th><th>P75</th><th>Position</th></tr></thead>
+      <tbody>${data.map(d => {
+        let pos = d.my_value >= d.p75 ? '<span style="color:#28a745;font-weight:600">Above P75</span>' :
+                  d.my_value >= d.median ? '<span style="color:#1f77b4">Above Median</span>' :
+                  d.my_value >= d.p25 ? '<span style="color:#ffc107">Below Median</span>' :
+                  '<span style="color:#dc3545;font-weight:600">Below P25</span>';
+        return `<tr><td>${metricLabels[d.metric] || d.metric}</td><td><strong>${d.my_value}</strong></td><td>${d.p25}</td><td>${d.median}</td><td>${d.p75}</td><td>${pos}</td></tr>`;
+      }).join('')}</tbody></table>
+    </div>`;
+
+  charts.f19 = new Chart(document.getElementById('chartF19'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => metricLabels[d.metric] || d.metric),
+      datasets: [
+        { label: 'My Value', data: data.map(d => d.my_value), backgroundColor: '#1f77b4' },
+        { label: 'Median', data: data.map(d => d.median), backgroundColor: '#aec7e8' },
+        { label: 'P75', data: data.map(d => d.p75), backgroundColor: '#c7c7c7' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+function renderF20(container) {
+  const data = window.DATA.purchases[currentProperty];
+  const catalog = window.DATA.coop_catalog;
+  const totalSpend = data.reduce((s, d) => s + d.spend, 0);
+  const colors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2'];
+
+  container.innerHTML = `
+    <div class="metric-cards">
+      <div class="metric-card"><div class="value">${fmtUSD(totalSpend)}</div><div class="label">Total Purchases</div></div>
+      <div class="metric-card"><div class="value">${data.length}</div><div class="label">Categories</div></div>
+      <div class="metric-card"><div class="value">${catalog.length}</div><div class="label">Co-op Items</div></div>
+      <div class="metric-card"><div class="value">${fmtUSD(data[0].spend)}</div><div class="label">Top: ${data[0].category}</div></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-container"><h3>Purchase Spend by Category</h3><div class="chart-wrap"><canvas id="chartF20"></canvas></div></div>
+      <div class="table-wrap"><h3>Spend Breakdown</h3>
+        <table><thead><tr><th>Category</th><th>Spend</th><th>% of Total</th></tr></thead>
+        <tbody>${data.map(d => `<tr><td>${d.category}</td><td>${fmtUSD(d.spend)}</td><td>${(d.spend/totalSpend*100).toFixed(1)}%</td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>
+    <div class="table-wrap"><h3>Co-op Catalog</h3>
+      <table><thead><tr><th>ID</th><th>Category</th><th>Item</th><th>Brand</th><th>Price</th></tr></thead>
+      <tbody>${catalog.map(d => `<tr><td>${d.id}</td><td>${d.category}</td><td>${d.item}</td><td>${d.brand}</td><td>${fmtUSD(d.price)}</td></tr>`).join('')}</tbody></table>
+    </div>`;
+
+  charts.f20 = new Chart(document.getElementById('chartF20'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.category),
+      datasets: [{ label: 'Spend', data: data.map(d => d.spend), backgroundColor: colors.slice(0, data.length) }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+// Initialize
+initPropertySelector();
+initDomainTabs();
+renderFeatureTabs();
+renderCurrentView();
+</script>
+</body>
+</html>
